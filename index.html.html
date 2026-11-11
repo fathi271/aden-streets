@@ -2326,7 +2326,7 @@ async function netPeer(){
   const status=()=>{const n=Object.keys(remotes).length;setNet("ok",(isHost?"أنت المضيف":"متصل بالمضيف")+(n?` · ${n+1} لاعبين`:` · غرفة «${myCode}» · بانتظار صاحبك`))};
   function setupConn(conn){
     conn.on("open",()=>{conns.set(conn.peer,conn);status();if(String(peer.id)<String(conn.peer))setTimeout(()=>{if(!calls.has(conn.peer))callPeer(conn.peer)},600)});
-    conn.on("data",d=>{if(!d||typeof d!=="object")return;const id=String(d.id||conn.peer).slice(0,64);if(id===peer.id)return;if(d.ev)onEvent(id,d.ev);else upsertRemote(id,d);if(isHost)for(const[pid,c]of conns)if(pid!==conn.peer&&c.open)c.send(d)});
+    conn.on("data",d=>{if(!d||typeof d!=="object")return;const id=String(d.id||conn.peer).slice(0,64);if(id===peer.id)return;if(d.ev&&d.ev.k==="vc"){if(d.ev.to===peer.id)setTimeout(()=>callPeer(id),200)}else if(d.ev)onEvent(id,d.ev);else upsertRemote(id,d);if(isHost)for(const[pid,c]of conns)if(pid!==conn.peer&&c.open)c.send(d)});
     conn.on("close",()=>{conns.delete(conn.peer);removeRemote(conn.peer);status();if(!isHost&&conn.peer===hostId&&!migrating){migrating=true;setNet("warn","المضيف طلع — نرتّب الغرفة…");calls.forEach(c=>{try{c.close()}catch(e){}});calls.clear();try{peer.destroy()}catch(e){}conns.clear();setTimeout(()=>{migrating=false;startHost()},400+Math.random()*1800)}});
     conn.on("error",()=>{});
   }
@@ -2336,7 +2336,7 @@ async function netPeer(){
   function onCall(call){call.answer(localStream());call._tx=true;handleCall(call);if(mic)setTimeout(()=>pushMic(call),400)}
   function handleCall(call){const old=calls.get(call.peer);if(old&&old!==call)try{old.close()}catch(e){}calls.set(call.peer,call);
     call.on("stream",s=>{let a=audios.get(call.peer);if(!a){a=document.createElement("audio");a.autoplay=true;a.playsInline=true;a.setAttribute("playsinline","");a.setAttribute("webkit-playsinline","");a.style.display="none";document.body.appendChild(a);audios.set(call.peer,a)}a.srcObject=s;a.muted=false;a.volume=1;a.play().catch(()=>toast("اضغط على الشاشة لسماع صوت صاحبك"))});call.on("close",()=>{if(calls.get(call.peer)===call){calls.delete(call.peer);const a=audios.get(call.peer);if(a){try{a.srcObject=null}catch(e){}}}});call.on("error",()=>{})}
-  const unlockAudio=()=>{for(const a of audios.values())if(a.paused&&a.srcObject)a.play().catch(()=>{});try{if(typeof AC!=="undefined"&&AC&&AC.state!=="running")AC.resume()}catch(e){}};addEventListener("pointerdown",unlockAudio,true);addEventListener("touchend",unlockAudio,true);
+  const unlockAudio=()=>{for(const a of audios.values())if(a.paused&&a.srcObject)a.play().catch(()=>{});try{if(mic&&!document.hidden&&songsOn()&&songEl.paused&&songEl.src)songEl.play().catch(()=>{})}catch(e){}try{if(typeof AC!=="undefined"&&AC&&AC.state!=="running")AC.resume()}catch(e){}};addEventListener("pointerdown",unlockAudio,true);addEventListener("touchend",unlockAudio,true);
   function callPeer(pid){try{const c=peer.call(pid,localStream());if(!c)return;c._tx=true;handleCall(c)}catch(e){}}
   function startHost(){return new Promise(res=>{peer=new Peer(hostId,{debug:0});
     peer.on("open",()=>{isHost=true;status();res()});peer.on("connection",setupConn);peer.on("call",onCall);
@@ -2351,7 +2351,7 @@ async function netPeer(){
     send(s){const d=Object.assign({id:peer&&peer.id},s);for(const c of conns.values())if(c.open)try{c.send(d)}catch(e){}},
     ev(e){const d={id:peer&&peer.id,ev:e};for(const c of conns.values())if(c.open)try{c.send(d)}catch(_){}},
     async mic(on){if(on){if(!mic){if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){const e=new Error("nomedia");e.name="NoMedia";throw e}try{mic=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}})}catch(e1){if(e1&&e1.name==="NotAllowedError")throw e1;mic=await navigator.mediaDevices.getUserMedia({audio:true})}fixAudioAfterMic();
-        const targets=new Set(isHost?[...conns.keys()]:[hostId]);for(const id in remotes)targets.add(id);targets.forEach(id=>{const c=calls.get(id);if(!(c&&c.open&&pushMic(c)))callPeer(id)})}else mic.getAudioTracks().forEach(t=>t.enabled=true)}
+        const targets=new Set(isHost?[...conns.keys()]:[hostId]);for(const id in remotes)targets.add(id);targets.forEach(id=>{const c=calls.get(id);if(c&&c.open)pushMic(c);if(String(peer.id)<String(id))callPeer(id);else{const d={id:peer.id,ev:{k:"vc",to:id}};for(const cn of conns.values())if(cn.open)try{cn.send(d)}catch(e){}}})}else mic.getAudioTracks().forEach(t=>t.enabled=true)}
       else if(mic)mic.getAudioTracks().forEach(t=>t.enabled=false)},
     onNew(id){status();if(peer&&!calls.has(id)&&String(peer.id)<String(id))setTimeout(()=>{if(!calls.has(id))callPeer(id)},600)},
     leave(){try{peer.destroy()}catch(e){}}};
@@ -2392,7 +2392,11 @@ $("chatBtn").onclick=()=>chatSheet();
 $("camBtn").onclick=()=>cycleCam();
 $("radioBtn").onclick=()=>cycleRadio();
 function fixAudioAfterMic(){/* iOS pauses Web Audio when the mic opens; wake it up again */
-  const wake=()=>{try{if(typeof AC!=="undefined"&&AC&&AC.state!=="running")AC.resume()}catch(e){}};wake();setTimeout(wake,300);setTimeout(wake,1200)}
+  const wake=()=>{try{if(typeof AC!=="undefined"&&AC&&AC.state!=="running")AC.resume()}catch(e){}
+    /* Android pauses the radio song when the mic opens — start it again */
+    try{if(!document.hidden&&songsOn()&&songEl.paused&&songEl.src)songEl.play().catch(()=>{})}catch(e){}
+    try{if(typeof WZ!=="undefined"&&WZ.on&&WZ.el.paused)WZ.el.play().catch(()=>{})}catch(e){}};
+  wake();[300,1000,2000,4000].forEach(t=>setTimeout(wake,t))}
 function micErrText(err){const n=err&&err.name||"";const ios=/iP(hone|ad|od)/.test(navigator.userAgent);
   if(n==="NoMedia")return ios?"المتصفح هذا ما يدعم المايك. افتح الرابط في سفاري (مو داخل واتساب أو تطبيق ثاني).":"المتصفح هذا ما يدعم المايك. افتح الرابط في كروم.";
   if(n==="NotAllowedError")return ios?"المايك مرفوض. ادخل: الإعدادات ← سفاري ← الميكروفون ← «اسأل» أو «سماح»، ثم حدّث الصفحة وجرّب.":"المايك مرفوض. اضغط القفل 🔒 جنب الرابط ← الأذونات ← الميكروفون ← سماح، ثم جرّب.";
