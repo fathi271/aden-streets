@@ -2337,6 +2337,10 @@ async function netPeer(){
   function handleCall(call){const old=calls.get(call.peer);if(old&&old!==call)try{old.close()}catch(e){}calls.set(call.peer,call);
     call.on("stream",s=>{let a=audios.get(call.peer);if(!a){a=document.createElement("audio");a.autoplay=true;a.playsInline=true;a.setAttribute("playsinline","");a.setAttribute("webkit-playsinline","");a.style.display="none";document.body.appendChild(a);audios.set(call.peer,a)}a.srcObject=s;a.muted=false;a.volume=1;a.play().catch(()=>toast("اضغط على الشاشة لسماع صوت صاحبك"))});call.on("close",()=>{if(calls.get(call.peer)===call){calls.delete(call.peer);const a=audios.get(call.peer);if(a){try{a.srcObject=null}catch(e){}}}});call.on("error",()=>{})}
   const unlockAudio=()=>{for(const a of audios.values())if(a.paused&&a.srcObject)a.play().catch(()=>{});try{if(mic&&!document.hidden&&songsOn()&&songEl.paused&&songEl.src)songEl.play().catch(()=>{})}catch(e){}try{if(typeof AC!=="undefined"&&AC&&AC.state!=="running")AC.resume()}catch(e){}};addEventListener("pointerdown",unlockAudio,true);addEventListener("touchend",unlockAudio,true);
+  /* speaker mode (Android): without the phone's call echo-canceller, Android keeps the loudspeaker instead of the call earpiece */
+  async function openMic(){if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){const e=new Error("nomedia");e.name="NoMedia";throw e}
+    const spk=!!CTL.spk;try{return await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:!spk,noiseSuppression:true,autoGainControl:true}})}catch(e1){if(e1&&e1.name==="NotAllowedError")throw e1;return await navigator.mediaDevices.getUserMedia({audio:true})}}
+  function redial(){const targets=new Set(isHost?[...conns.keys()]:[hostId]);for(const id in remotes)targets.add(id);targets.forEach(id=>{const c=calls.get(id);if(c&&c.open)pushMic(c);if(String(peer.id)<String(id))callPeer(id);else{const d={id:peer.id,ev:{k:"vc",to:id}};for(const cn of conns.values())if(cn.open)try{cn.send(d)}catch(e){}}})}
   function callPeer(pid){try{const c=peer.call(pid,localStream());if(!c)return;c._tx=true;handleCall(c)}catch(e){}}
   function startHost(){return new Promise(res=>{peer=new Peer(hostId,{debug:0});
     peer.on("open",()=>{isHost=true;status();res()});peer.on("connection",setupConn);peer.on("call",onCall);
@@ -2350,9 +2354,10 @@ async function netPeer(){
   return{voice:true,
     send(s){const d=Object.assign({id:peer&&peer.id},s);for(const c of conns.values())if(c.open)try{c.send(d)}catch(e){}},
     ev(e){const d={id:peer&&peer.id,ev:e};for(const c of conns.values())if(c.open)try{c.send(d)}catch(_){}},
-    async mic(on){if(on){if(!mic){if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){const e=new Error("nomedia");e.name="NoMedia";throw e}try{mic=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}})}catch(e1){if(e1&&e1.name==="NotAllowedError")throw e1;mic=await navigator.mediaDevices.getUserMedia({audio:true})}fixAudioAfterMic();
-        const targets=new Set(isHost?[...conns.keys()]:[hostId]);for(const id in remotes)targets.add(id);targets.forEach(id=>{const c=calls.get(id);if(c&&c.open)pushMic(c);if(String(peer.id)<String(id))callPeer(id);else{const d={id:peer.id,ev:{k:"vc",to:id}};for(const cn of conns.values())if(cn.open)try{cn.send(d)}catch(e){}}})}else mic.getAudioTracks().forEach(t=>t.enabled=true)}
+    async mic(on){if(on){if(!mic){mic=await openMic();fixAudioAfterMic();redial()}else mic.getAudioTracks().forEach(t=>t.enabled=true)}
       else if(mic)mic.getAudioTracks().forEach(t=>t.enabled=false)},
+    async remic(){if(!mic)return;const was=mic.getAudioTracks().some(t=>t.enabled);try{mic.getTracks().forEach(t=>t.stop())}catch(e){}mic=null;
+      mic=await openMic();mic.getAudioTracks().forEach(t=>t.enabled=was);fixAudioAfterMic();redial()},
     onNew(id){status();if(peer&&!calls.has(id)&&String(peer.id)<String(id))setTimeout(()=>{if(!calls.has(id))callPeer(id)},600)},
     leave(){try{peer.destroy()}catch(e){}}};
 }
@@ -2419,6 +2424,7 @@ const CTL=Object.assign({sens:1.35,ret:5,size:175,shake:1,fuelOn:1,vol:.9,mute:0
 function saveCtl(){store.set("aden.ctl",JSON.stringify(CTL))}
 const WH={rot:0,max:200,id:null,last:0};
 const wheelEl=$("wheel"),rimEl=$("wheelRim");
+if(CTL.spk===undefined){CTL.spk=/Android/i.test(navigator.userAgent)?1:0;try{store.set("aden.ctl",JSON.stringify(CTL))}catch(e){}}
 if(!CTL.wv3){if(CTL.sens===1)CTL.sens=1.35;CTL.wv3=1;try{store.set("aden.ctl",JSON.stringify(CTL))}catch(e){}}
 if(!CTL.wv2){if(CTL.size===150)CTL.size=175;CTL.wv2=1;try{store.set("aden.ctl",JSON.stringify(CTL))}catch(e){}}
 function applyWheelSize(){const s=Math.max(110,Math.min(200,CTL.size));wheelEl.style.width=wheelEl.style.height=s+"px"}
@@ -2713,7 +2719,7 @@ function settingsSheet(){const pct=v=>Math.round(v*100)+"%";const F={sSens:pct,s
   openSheet("الإعدادات",`<h4 class="sth">🎮 المقود</h4>
   ${sl("sSens","حساسية المقود",.5,1.6,.05,CTL.sens)}${sl("sRet","سرعة رجوعه للوسط",2,10,.5,CTL.ret)}${sl("sSize","حجم المقود",110,200,5,CTL.size)}${seg("size",[["140","صغير"],["175","وسط"],["200","كبير"]],CTL.size)}
   <h4 class="sth">📲 الشاشة</h4><div class="row"><button type="button" id="sFull">📲 ملء الشاشة / أضف للشاشة الرئيسية</button></div>
-  <h4 class="sth">🔊 الصوت</h4>${sl("sVol","مستوى الصوت",0,1,.05,CTL.vol)}${seg("mute",[["0","🔊 شغّال"],["1","🔇 كتم كل الأصوات"]],CTL.mute)}
+  <h4 class="sth">🔊 الصوت</h4>${sl("sVol","مستوى الصوت",0,1,.05,CTL.vol)}${seg("mute",[["0","🔊 شغّال"],["1","🔇 كتم كل الأصوات"]],CTL.mute)}${/Android/i.test(navigator.userAgent)?`<div class="row" style="margin-top:6px;font-weight:700">🎤 صوت المكالمة يطلع من:</div>${seg("spk",[["1","📢 السبيكر"],["0","📞 سماعة الأذن"]],CTL.spk)}<div class="row" style="font-size:12px;color:var(--muted);line-height:1.6">لو صاحبك يسمع صدى صوته، البس سماعات أو اختر «سماعة الأذن».</div>`:""}
   <h4 class="sth">🌅 وقت اليوم <small>(الآن: ${todName()})</small></h4>${seg("tod",[["auto","دورة كاملة"],["day","نهار"],["sunset","غروب"],["night","ليل"]],CTL.tod)}
   <h4 class="sth">🌦️ الطقس</h4>${seg("wx",[["auto","يتغيّر"],["clear","صحو"],["dust","طوز"],["rain","مطر"]],CTL.wx||"auto")}
   <h4 class="sth">⚙️ الجودة</h4>${seg("q",[["auto","تلقائي"],["low","منخفضة"],["med","متوسطة"],["high","عالية"]],SAVE.q)}
@@ -2724,7 +2730,7 @@ function settingsSheet(){const pct=v=>Math.round(v*100)+"%";const F={sSens:pct,s
     {const fb=b.querySelector("#sFull");if(fb)fb.onclick=()=>{closeSheet();goFull()}}bind("sSens","sens");bind("sRet","ret");bind("sSize","size",applyWheelSize);bind("sVol","vol",setVol);
     b.querySelectorAll(".seg").forEach(sg=>sg.querySelectorAll("button").forEach(x=>x.onclick=()=>{const k=sg.dataset.k,v=x.dataset.v;
       if(k==="q"){SAVE.q=v;perf.done=false;perf.t=perf.n=0;perf.lvl=0;saveNow();applyQuality()}else if(k==="tod"||k==="wx")CTL[k]=v;else CTL[k]=+v;
-      if(k==="mute")setVol();if(k==="size")applyWheelSize();if(k==="fuelOn")drawFuel();saveCtl();settingsSheet()}));
+      if(k==="mute")setVol();if(k==="spk"&&net&&net.remic)net.remic().catch(()=>{});if(k==="size")applyWheelSize();if(k==="fuelOn")drawFuel();saveCtl();settingsSheet()}));
     b.querySelector("#sDef").onclick=()=>{Object.assign(CTL,CTL_DEF);saveCtl();applyWheelSize();setVol();drawFuel();toast("رجّعنا الإعدادات الافتراضية",1500);settingsSheet()};
     const rb=b.querySelector("#sReset");rb.onclick=()=>{if(!resetArm){resetArm=true;rb.textContent="⚠️ اضغط مرة ثانية للتأكيد";setTimeout(()=>{resetArm=false;if(rb.isConnected)rb.textContent="🗑 إعادة ضبط التقدم"},4000);return}
       RESET=true;try{["aden.save","aden.cash","aden.trips"].forEach(k=>localStorage.removeItem(k))}catch(e){}location.reload()}})}
