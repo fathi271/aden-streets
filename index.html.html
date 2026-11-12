@@ -2266,7 +2266,7 @@ function stepPlayer(dt){
   // move + collide (small fixed steps → no tunnelling)
   let nx=P.x+P.vx*dt,nz=P.z+P.vz*dt;const rad=st.rad;
   {const s2=Math.hypot(P.vx,P.vz);if(s2>5)for(const s of STALLS){if(!s.broken&&Math.abs(s.x-nx)<5&&Math.abs(s.z-nz)<5&&Math.hypot(s.x-nx,s.z-nz)<s.r+rad+.2){
-    smash(s,s2,P.vx,P.vz);P.vx*=.82;P.vz*=.82;damage(.02);net&&net.ev&&net.ev({k:"sm",i:s.idx,vx:+P.vx.toFixed(2),vz:+P.vz.toFixed(2),sp:+s2.toFixed(1)})}}}
+    if(s.fem===undefined)s.fem=((s.idx*7+3)%5)<2;sayHit("car",s.fem);smash(s,s2,P.vx,P.vz);P.vx*=.82;P.vz*=.82;damage(.02);net&&net.ev&&net.ev({k:"sm",i:s.idx,vx:+P.vx.toFixed(2),vz:+P.vz.toFixed(2),sp:+s2.toFixed(1)})}}}
   const c=collide(nx,nz,rad);nx=c.px;nz=c.pz;
   if(c.hit){const vn=P.vx*c.hit.nx+P.vz*c.hit.nz;if(vn<0){P.vx-=c.hit.nx*vn*1.3;P.vz-=c.hit.nz*vn*1.3;P.vx*=.78;P.vz*=.78;if(vn<-12)bump(Math.min(1,-vn/40));if(vn<-7){damage((-vn-7)/95);if(CTL.shake)camShake=Math.min(1,-vn/30)}}}
   for(const t of traffic){if(t.off)continue;if(t.len){const hx=Math.sin(t.m.rotation.y)*t.len,hz=Math.cos(t.m.rotation.y)*t.len;push(t.x+hx,t.z+hz,rad+t.rad,.6);push(t.x-hx,t.z-hz,rad+t.rad,.6)}else push(t.x,t.z,rad+t.rad,.6,t)}
