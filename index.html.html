@@ -2224,6 +2224,8 @@ function collide(px,pz,r){let hit=null;const onE=ELEV.length&&elevAt(px,pz)!==nu
 function stepPlayer(dt){
   const st=VT(),fx=Math.sin(P.r),fz=Math.cos(P.r);
   const lock=uiLock||frozen>0||WALK.on;
+  /* self-repair: after ~8 s of driving with no new damage the car slowly heals itself (smoke stops, no workshop trip needed) */
+  if(P.hp<1&&!lock&&Math.hypot(P.vx,P.vz)>2){P.healT=(P.healT||0)+dt;if(P.healT>8){const was=P.hp;P.hp=Math.min(1,P.hp+dt*.022);paintDamage();if(was<.4&&P.hp>=.4)toast("🔧 السيارة تصلّحت لحالها والدخان وقف",2200)}}
   const gasIn=!lock&&input.gas,brkIn=!lock&&input.back,hand=!lock&&input.hand;
   P.thr+=((gasIn?1:0)-P.thr)*Math.min(1,dt*(gasIn?2.8:7));
   P.brk+=((brkIn?1:0)-P.brk)*Math.min(1,dt*9);
@@ -2716,7 +2718,7 @@ function stepStations(sp){if(FILL.on||WALK.on)return;let html="",key="";
     actKey="";saveNow()})}
 const _dark=new THREE.Color("#2a2522");
 function paintDamage(){const u=car.userData;u.body.color.copy(u.base).lerp(_dark,(1-P.hp)*.4)}
-function damage(a){a*=VT().arm;if(a<=0)return;GD.t=0;const was=P.hp;P.hp=Math.max(0,P.hp-a);paintDamage();
+function damage(a){a*=VT().arm;if(a<=0)return;GD.t=0;P.healT=0;const was=P.hp;P.hp=Math.max(0,P.hp-a);paintDamage();
   if(MS.mode==="delivery"&&MS.state==="drop"&&a>.02){MS.crashes++;toast("📦 الطلب انضرب!",1200)}
   if(was>.4&&P.hp<=.4)toast("💨 السيارة تدخن — روح الورشة",2500);if(was>0&&P.hp<=0)toast("💥 السيارة خربت! روح الورشة أو اطلب سطحة",3500)}
 function rebuildCar(){const v=car.visible;const bub=car.userData.bub;scene.remove(car);car=makeVehicle(SAVE.car,myColor,SAVE.rim);applyMods(car,SAVE.mods);car.visible=v;scene.add(car);cockpit=makeCockpit(car);paintDamage();if(MS.cargo){MS.cargo=null;setCargo(true)}if(MS.mode==="wedding"&&MS.state==="drop")car.userData.deco.visible=true}
