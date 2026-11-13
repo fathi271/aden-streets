@@ -318,8 +318,8 @@ function noise(g,w,h,base,amt,n){g.fillStyle=base;g.fillRect(0,0,w,h);for(let i=
 const T={
   mall:tex(TEX.mall),mallGold:tex(TEX.mallGold),mallGlass:tex(TEX.mallGlass),tech1:tex(TEX.tech1,true),tech2:tex(TEX.tech2,true),tech3:tex(TEX.tech3,true),hospital:tex(TEX.hospital),hotel:tex(TEX.hotel,true),street:tex(TEX.street,true),
   brick:tex(TEX.brick,true),clock:tex(TEX.clock),church:tex(TEX.church),
-  asphalt:canvasTex(64,256,(g,w,h)=>{noise(g,w,h,"#3b3d40",.18,1400);g.fillStyle="#e9e4d4";g.fillRect(30,0,4,120);g.fillStyle="rgba(240,236,220,.85)";g.fillRect(3,0,2,h);g.fillRect(w-5,0,2,h)}),
-  asphaltPlain:canvasTex(64,64,(g,w,h)=>noise(g,w,h,"#3b3d40",.18,500)),
+  asphalt:canvasTex(64,256,(g,w,h)=>{noise(g,w,h,"#3b3d40",.18,1400);g.fillStyle="#e9e4d4";g.fillRect(30,0,4,120);g.fillStyle="rgba(240,236,220,.85)";g.fillRect(3,0,2,h);g.fillRect(w-5,0,2,h);roadWear(g,w,h)}),
+  asphaltPlain:canvasTex(64,64,(g,w,h)=>{noise(g,w,h,"#3b3d40",.18,500);roadWear(g,w,h)}),
   pave:canvasTex(64,64,(g,w,h)=>{noise(g,w,h,"#c9c2b4",.12,400);g.strokeStyle="rgba(90,80,70,.35)";g.lineWidth=1;for(let i=0;i<=w;i+=16){g.beginPath();g.moveTo(i,0);g.lineTo(i,h);g.stroke();g.beginPath();g.moveTo(0,i);g.lineTo(w,i);g.stroke()}}),
   kerb:canvasTex(64,8,(g,w,h)=>{g.fillStyle="#f2c230";g.fillRect(0,0,32,h);g.fillStyle="#141414";g.fillRect(32,0,32,h)}),
   kerbRW:canvasTex(64,8,(g,w,h)=>{g.fillStyle="#c8272d";g.fillRect(0,0,32,h);g.fillStyle="#f4f1ea";g.fillRect(32,0,32,h)}),
@@ -332,9 +332,13 @@ const T={
   sea:canvasTex(256,256,(g,w,h)=>{const gr=g.createLinearGradient(0,0,w,h);gr.addColorStop(0,"#1b7f99");gr.addColorStop(1,"#1d6f8c");g.fillStyle=gr;g.fillRect(0,0,w,h);for(let i=0;i<140;i++){g.strokeStyle=`rgba(220,245,250,${.08+Math.random()*.18})`;g.lineWidth=1+Math.random()*1.5;const x=Math.random()*w,y=Math.random()*h,l=8+Math.random()*26;g.beginPath();g.moveTo(x,y);g.quadraticCurveTo(x+l/2,y-3,x+l,y);g.stroke()}}),
 };
 T.sea.repeat.set(60,60);
-function facade(wall,win,frame,ac){return canvasTex(128,128,(g,w,h)=>{noise(g,w,h,wall,.08,600);for(let r=0;r<2;r++)for(let c=0;c<2;c++){const x=14+c*64,y=16+r*64;g.fillStyle=frame;g.fillRect(x-3,y-3,40,34);g.fillStyle=win;g.fillRect(x,y,34,28);g.fillStyle="rgba(255,255,255,.18)";g.fillRect(x,y,34,6);g.fillStyle=frame;g.fillRect(x+16,y,2,28);if(ac&&(r+c)%2===0){g.fillStyle="#e8e8e2";g.fillRect(x+36,y+14,14,10)}g.fillStyle="rgba(0,0,0,.12)";g.fillRect(0,y+34,w,3)}})}
+function roadWear(g,w,h){g.save();g.fillStyle='rgba(18,22,25,.17)';g.fillRect(w*.13,h*.32,w*.22,h*.3);g.strokeStyle='rgba(20,23,26,.27)';g.lineWidth=.7;g.beginPath();g.moveTo(w*.76,0);g.lineTo(w*.69,h*.23);g.lineTo(w*.8,h*.4);g.lineTo(w*.73,h*.67);g.stroke();g.restore()}
+function facade(wall,win,frame,ac){return canvasTex(128,128,(g,w,h)=>{noise(g,w,h,wall,.08,600);for(let r=0;r<2;r++)for(let c=0;c<2;c++){const x=14+c*64,y=16+r*64;g.fillStyle=frame;g.fillRect(x-3,y-3,40,34);g.fillStyle=win;g.fillRect(x,y,34,28);g.fillStyle="rgba(255,255,255,.18)";g.fillRect(x,y,34,6);g.fillStyle=frame;g.fillRect(x+16,y,2,28);if(ac&&(r+c)%2===0){g.fillStyle="#e8e8e2";g.fillRect(x+36,y+14,14,10);g.fillStyle='#898f8c';for(let k=0;k<4;k++)g.fillRect(x+38,y+16+k*2,10,1)}
+if((r+c)%2===0){g.fillStyle='rgba(30,39,46,.3)';g.fillRect(x,y+4,10,24)}
+if(r===1){g.fillStyle=frame;g.fillRect(x-5,y+27,44,5);g.fillStyle='#636b68';for(let k=0;k<6;k++)g.fillRect(x-3+k*8,y+19,1,10);g.fillRect(x-4,y+19,43,1)}g.fillStyle="rgba(0,0,0,.12)";g.fillRect(0,y+34,w,3)}})}
 const FAC=[facade("#ece7dc","#5f7f97","#d8d0c0",true),facade("#d9c7a6","#41596b","#c3ad88",true),facade("#f1efe9","#2f6f95","#ffffff",false),facade("#c9b9a0","#6b8597","#b8a589",true),facade("#e3dfd6","#3d4f5c","#cfc6b6",true)];
 
+const WINDOW_MAPS=FAC.map((_,i)=>canvasTex(128,128,(g)=>{g.fillStyle='#000';g.fillRect(0,0,128,128);for(let r=0;r<2;r++)for(let c=0;c<2;c++){if((r*2+c+i)%3===0)continue;const x=14+c*64,y=16+r*64;g.fillStyle=(r+c+i)%2?'#e9ba6e':'#ffe9ba';g.fillRect(x+2,y+2,12,24);g.fillRect(x+19,y+2,13,24)}},true));
 const M={
   asphalt:new THREE.MeshLambertMaterial({map:T.asphalt}),
   asphaltPlain:new THREE.MeshLambertMaterial({map:T.asphaltPlain}),
@@ -433,7 +437,7 @@ function boxGeo(w,h,d,uw,uh){const g=new THREE.BoxGeometry(w,h,d);const uv=g.att
   for(let f=0;f<6;f++){let su,sv;if(f<2){su=d/uw;sv=h/uh}else if(f<4){su=1;sv=1}else{su=w/uw;sv=h/uh}
     for(let i=0;i<4;i++){const k=f*4+i;uv.setXY(k,uv.getX(k)*su,uv.getY(k)*sv)}}return g}
 const sideMats={};
-function sideMat(key){if(!sideMats[key]){const map=key.startsWith("fac")?FAC[+key.slice(3)]:T[key];sideMats[key]=new THREE.MeshLambertMaterial({map})}return sideMats[key]}
+function sideMat(key){if(!sideMats[key]){const map=key.startsWith("fac")?FAC[+key.slice(3)]:T[key];sideMats[key]=new THREE.MeshLambertMaterial({map,...(key.startsWith("fac")?{emissiveMap:WINDOW_MAPS[+key.slice(3)],emissive:0xffdfaa,emissiveIntensity:0}:{})})}return sideMats[key]}
 function building(cx,cz,w,d,h,key,uw,uh){const s=sideMat(key);const g=boxGeo(w,h,d,uw,uh);const m=new THREE.Mesh(g,[s,s,M.roof,M.roof,s,s]);m.position.set(cx,h/2+0.25,cz);scene.add(m);
   // roof clutter: water tank
   if(h<60&&rnd()<.6){const t=new THREE.Mesh(new THREE.CylinderGeometry(1.2,1.2,2,8),M.white);t.position.set(cx+rr(-w/4,w/4),h+1.25,cz+rr(-d/4,d/4));scene.add(t)}
@@ -1923,10 +1927,14 @@ const SAVE=(()=>{let s=null;try{s=JSON.parse(store.get("aden.save")||"null")}cat
   d.fuel=Math.min(1,Math.max(0,+d.fuel||0));d.hp=Math.min(1,Math.max(0,+d.hp||0));return d})();
 function saveNow(){if(RESET)return;SAVE.fuel=P.fuel;SAVE.hp=P.hp;try{store.set("aden.save",JSON.stringify(SAVE))}catch(e){}}
 function addCash(n){SAVE.cash=Math.max(0,Math.round(SAVE.cash+n));setCash();saveNow()}
-function setCash(){$("cash").textContent=SAVE.cash.toLocaleString("ar-EG");const e=$("pts");if(e)e.textContent=(SAVE.pts||0).toLocaleString("ar-EG")}
+const RANKS=[[0,"🔰","سوّاق جديد"],[300,"🚕","سوّاق أجرة"],[900,"🛣️","خبير الشوارع"],[2000,"🏅","سوّاق محترف"],[4000,"🏆","نجم كريتر"],[7000,"👑","معلّم عدن"]];
+function rankOf(p){let r=0;for(let i=0;i<RANKS.length;i++)if(p>=RANKS[i][0])r=i;return r}
+function setCash(){$("cash").textContent=SAVE.cash.toLocaleString("ar-EG");const e=$("pts");const p=SAVE.pts||0;if(e)e.textContent=p.toLocaleString("ar-EG");
+  try{const r=rankOf(p),ch=$("ptsChip");if(ch){ch.firstChild.nodeValue=RANKS[r][1]+" ";const nx=RANKS[r+1];ch.title=RANKS[r][2]+(nx?" — باقي "+(nx[0]-p)+" نقطة للرتبة الجاية":"");}
+    if(SAVE.rank===undefined)SAVE.rank=r;else if(r>SAVE.rank){SAVE.rank=r;const bonus=r*500;SAVE.cash+=bonus;$("cash").textContent=SAVE.cash.toLocaleString("ar-EG");setTimeout(()=>{try{toast(RANKS[r][1]+" ترقية! صرت «"+RANKS[r][2]+"» — مكافأة "+bonus+" ريال",4200);if(typeof coin==="function")coin()}catch(e){}},600)}else if(r<SAVE.rank)SAVE.rank=r}catch(e){}}
 function addPts(n){SAVE.pts=Math.max(0,(SAVE.pts||0)+n);setCash();saveNow()}
 const fmt=n=>Math.round(n).toLocaleString("ar-EG");
-function VT(){const b=VTYPES[SAVE.car]||VTYPES.sedan,u=SAVE.up;return{wb:b.wb||2.7,max:b.max*(1+.07*u.eng),acc:b.acc*(1+.12*u.eng),grip:b.grip*(1+.1*u.tyr),brake:b.brake,turn:b.turn,rad:b.rad,
+function VT(){const b=VTYPES[SAVE.car]||VTYPES.sedan,u=SAVE.up,load=missionLoad(),heavy=SAVE.car==="bus"?1.16:SAVE.car==="cruiser"?1.09:SAVE.car==="hilux"?1.06:1;return{wb:b.wb||2.7,max:b.max*(1+.07*u.eng),acc:b.acc*(1+.12*u.eng)/(heavy*(1+load)),grip:b.grip*(1+.1*u.tyr)/(1+load*.12),brake:b.brake/(1+load*.45),turn:b.turn,rad:b.rad,
   nDrain:.28*(1-.18*u.nit),nRegen:.06*(1+.35*u.nit),arm:1-.2*u.arm,tank:1+.4*u.tank}}
 
 /* ================= particles: smoke, tyre smoke, fireworks ================= */
@@ -1971,7 +1979,7 @@ function txTarget(){return MS.state==="pickup"?MS.from:MS.state==="drop"?MS.to:n
 function farFrom(list,min){const o=list.filter(d=>Math.hypot(d.x-P.x,d.z-P.z)>min);return pick(o.length?o:list)}
 function startMission(mode){if(RC.on||CH.on){toast("خلّص السباق أو المطاردة أول");return}if(PK.on)stopPark();stopMission(true);MS.mode=mode;MS.to=null;newPickup();closeSheet()}
 function newPickup(){const list=MS.mode==="delivery"?SHOPS:DEST;const d=farFrom(list,60);
-  MS.from=d;MS.state="pickup";MS.crashes=0;MS.horns=0;MS.over=0;mPick.position.set(d.x,0,d.z);mPick.visible=true;mDrop.visible=false;
+  MS.contract=pick(MS.mode==="delivery"?["fragile","urgent","smooth"]:MS.mode==="taxi"?["urgent","smooth","clean"]:["clean","smooth"]);MS.rough=0;MS.from=d;MS.state="pickup";MS.crashes=0;MS.horns=0;MS.over=0;mPick.position.set(d.x,0,d.z);mPick.visible=true;mDrop.visible=false;
   if(MS.pax)scene.remove(MS.pax);MS.pax=null;
   if(MS.mode!=="delivery"){MS.pax=makePerson(MS.mode==="wedding"?GROOM:OUTFITS[Math.floor(Math.random()*OUTFITS.length)],pick(SKIN));MS.pax.position.set(d.x+4.5,groundAt(d.x+4.5,d.z+1.5),d.z+1.5);scene.add(MS.pax);
     if(MS.mode==="wedding"){const gar=new THREE.Mesh(new THREE.TorusGeometry(.2,.06,5,12),new THREE.MeshBasicMaterial({color:"#f2c230"}));gar.position.set(0,1.55,.05);gar.rotation.x=Math.PI/2.3;MS.pax.add(gar)}}
@@ -1991,27 +1999,29 @@ function stepMission(dt,fwd){if(!MS.mode)return;const tg=txTarget();
   MS.stopT=inside&&slow?MS.stopT+dt:0;
   const hint=inside&&!slow?"<em>وقّف داخل الدائرة</em>":"";
   if(MS.state==="pickup"){
-    txPanel(`<b>${MS.mode==="delivery"?"📦 روح استلم الطلب":MS.mode==="wedding"?"💍 روح خذ العريس":"🚕 روح خذ الراكب"}</b><span>${tg.n} · ${fmt(dist)} م</span>${hint}`);
+    txPanel(`<b>${MS.mode==="delivery"?"📦 روح استلم الطلب":MS.mode==="wedding"?"💍 روح خذ العريس":"🚕 روح خذ الراكب"}</b><span>${tg.n} · ${fmt(dist)} م</span><em>${contractText(MS.contract)}</em>${hint}`);
     if(MS.stopT>.6){if(MS.pax){scene.remove(MS.pax);MS.pax=null}mPick.visible=false;
       if(MS.mode==="tour"){const L=pick(LM.filter(l=>Math.hypot(l.tx-MS.from.x,l.tz-MS.from.z)>150))||LM[0];MS.to={n:L.n,x:L.tx,z:L.tz,lm:L.k}}else if(MS.mode==="wedding"){MS.to=HALL}else{MS.to=farFrom(DEST.filter(d=>d!==MS.from&&Math.hypot(d.x-MS.from.x,d.z-MS.from.z)>150),0)}
       if(MS.mode==="delivery")MS.to={n:"زبون في "+MS.to.n,x:MS.to.x,z:MS.to.z};
-      MS.dist=Math.hypot(MS.to.x-MS.from.x,MS.to.z-MS.from.z);MS.limit=Math.round(MS.dist/(MS.mode==="delivery"?12:11)+(MS.mode==="delivery"?18:25));MS.t=0;MS.state="drop";
+      MS.dist=Math.hypot(MS.to.x-MS.from.x,MS.to.z-MS.from.z);MS.limit=Math.round(MS.dist/(MS.mode==="delivery"?12:11)+(MS.mode==="delivery"?18:25));MS.t=0;MS.rough=0;MS.state="drop";
       mDrop.position.set(MS.to.x,0,MS.to.z);mDrop.visible=true;
       if(MS.mode==="taxi")toast("🧑 "+pick(SAY_PICK).replace("{d}",MS.to.n),3500);if(MS.mode==="tour")toast(`🧳 سائح: «ودّيني ${MS.to.n} يا كابتن، ودي أشوفها»`,3500);
       if(MS.mode==="delivery"){setCargo(true);toast(`📦 استلمت الطلب — وصّله لل${MS.to.n} بدون صدمات`,3500)}
       if(MS.mode==="wedding"){car.userData.deco.visible=true;TRAIL.length=0;
         if(MS.conv){MS.conv.parked=false;MS.conv.trail.length=0;MS.conv.cars.forEach((m,i)=>m.userData.hornT=.1+i*.2)}
         MUS.wed=true;radioRestart();wedZaffa(true);if(hasFriend()&&net)net.ev({k:"wed",a:"inv"});toast("🎉 العريس ركب! الموكب وراك — اضرب البوري وخلك على مهلك",4500)}}}
-  else if(MS.state==="drop"){MS.t+=dt;const left=Math.max(0,MS.limit-MS.t);const kmh=Math.abs(fwd)*3.6;
+  else if(MS.state==="drop"){if(Math.abs(fwd)*3.6>70||Math.abs(P.steer)>.55&&Math.abs(fwd)>12)MS.rough+=dt;MS.t+=dt;const left=Math.max(0,MS.limit-MS.t);const kmh=Math.abs(fwd)*3.6;
     if(MS.mode==="wedding"){if(kmh>60)MS.over+=dt;
       txPanel(`<b>💍 زفّة العريس إلى ${tg.n}</b><span>${fmt(dist)} م · 📯 ${MS.horns} هرن</span>${kmh>60?"<em>🐢 هدّي السرعة — زفة!</em>":hint}`)}
     else txPanel(`<b>${MS.mode==="delivery"?"📦 وصّل الطلب إلى":"🧭 وصّل الراكب إلى"} ${tg.n}</b><span>${fmt(dist)} م · ⏱ ${Math.ceil(left)} ث${MS.crashes?` · 💥 ${MS.crashes}`:""}</span>${hint}`);
+    if(MS.contract&&$("mission").children.length<4){const note=document.createElement('em');note.textContent=contractText(MS.contract);$('mission').appendChild(note)}
     if(MS.stopT>.6){let pay=0,msg="";
       if(MS.mode==="taxi"||MS.mode==="tour"){const late=left<=0;pay=Math.round((MS.dist*8+left*25)/50)*50;if(late)pay=Math.round(pay/100)*50;pay*=SAVE.car==="taxi"?1.3:SAVE.car==="bus"?1.5:1;msg=late?pick(SAY_LATE):pick(SAY_OK);SAVE.trips++}
       else if(MS.mode==="delivery"){pay=(MS.dist*7+left*25)*(SAVE.car==="moto"?1.3:1)*Math.max(.3,1-.2*MS.crashes);msg=MS.crashes?"الطلب وصل… بس شكله مبهدل 😅":left<=0?"تأخر الطلب شوي، مشكور":"الطلب وصل سليم وسخن 👌";SAVE.deliv++;setCargo(false)}
       else{pay=Math.max(1500,6000+Math.min(MS.horns,25)*60-MS.over*30);msg="ألف مبروك للعريس! 🎉 زغاريد في صيرة";SAVE.wed++;fireworks(HALL.x-12,HALL.z);WZ.ride=false;if(net)net.ev({k:"wed",a:"end"});
         if(MS.conv){const cv=MS.conv;cv.parked=true;cv.cars.forEach((m,i)=>m.userData.hornT=.1+i*.2);dropConvoy(cv,9000);MS.conv=null}car.userData.deco.visible=false;car.userData.haz.visible=false;MUS.wed=false;radioRestart()}
       if(MS.mode==="tour"){pay*=1.25;const lk=MS.to.lm;setTimeout(()=>{if(!uiLock)showLandmark(lk)},1800)}
+      const bonus=contractBonus(MS,left,pay);if(bonus){pay+=bonus;msg+=' · ⭐ مكافأة الشرط '+fmt(bonus)}
       pay=Math.round(pay/50)*50;addCash(pay);addPts(MS.mode==="taxi"||MS.mode==="tour"?Math.max(20,100+Math.round(left)-MS.crashes*20):MS.mode==="delivery"?Math.max(15,60-MS.crashes*15):200);toast(`${msg} · +${fmt(pay)} ريال 💰`,3800);coin();
       mDrop.visible=false;MS.state="wait";
       if(MS.mode!=="delivery"){const drop=makePerson(MS.mode==="wedding"?GROOM:OUTFITS[Math.floor(Math.random()*OUTFITS.length)],pick(SKIN));drop.position.set(tg.x+4,groundAt(tg.x+4,tg.z),tg.z);scene.add(drop);setTimeout(()=>scene.remove(drop),5000)}
@@ -2052,7 +2062,8 @@ function pointArrow(dx,dz,show,col){arrow.visible=show;if(!show)return;arrow.mat
 const RACE_CP=[[180,500],[180,350],[180,190],[60,180],[60,-30],[0,-60],[-60,-60],[-60,30],[-60,90],[-60,300],[-60,350],[-60,425]];
 const RC={on:false,i:0,t:0,mp:false,oppFin:null,done:false,tr:"buraiqa",fins:[],cps:RACE_CP};
 const TRACKS={buraiqa:{n:"ساحل صيرة ← كريتر",d:"الكورنيش وجولة البسيري ونفق العقبة",start:[180,562,Math.PI],cps:RACE_CP,bk:"best"},
-  bridge:{n:"الخط البحري: خور مكسر ↔ جولة كالتكس",d:"رايح على الجسر، تلف حول جولة كالتكس، وترجع",start:[-318,176,-Math.PI/2],cps:[[-450,175],[-640,175],[-800,154],[-826,180],[-800,206],[-640,185],[-450,185],[-336,185]],bk:"bestB"}};
+  bridge:{n:"الخط البحري: خور مكسر ↔ جولة كالتكس",d:"رايح على الجسر، تلف حول جولة كالتكس، وترجع",start:[-318,176,-Math.PI/2],cps:[[-450,175],[-640,175],[-800,154],[-826,180],[-800,206],[-640,185],[-450,185],[-336,185]],bk:"bestB"},
+  drag:{n:"سباق سرعة: الخط البحري ⚡",d:"خط مستقيم على الجسر — دعسة وحدة للنهاية",start:[-318,176,-Math.PI/2],cps:[[-450,175],[-580,175],[-700,175],[-762,175]],bk:"bestD"}};
 const cpRing=new THREE.Mesh(new THREE.TorusGeometry(8,.45,8,36),new THREE.MeshBasicMaterial({color:"#f2c230"}));cpRing.visible=false;scene.add(cpRing);
 const finTex=canvasTex(64,16,(g,w,h)=>{for(let x=0;x<w;x+=8)for(let y=0;y<h;y+=8){g.fillStyle=((x+y)/8)%2?"#111":"#fff";g.fillRect(x,y,8,8)}},false);
 const finBan=new THREE.Mesh(new THREE.PlaneGeometry(16,3),new THREE.MeshBasicMaterial({map:finTex,side:THREE.DoubleSide}));finBan.visible=false;scene.add(finBan);
@@ -2189,7 +2200,15 @@ function beep(f,len){if(!AC)return;const t=AC.currentTime,o=AC.createOscillator(
 function coin(){beep(1320,.06);setTimeout(()=>beep(1760,.1),90)}
 function pop(v){if(!AC)return;bump(v)}
 
-{const _b=scene.children.length;SPECIAL.forEach(f=>f());fixWorld();const _late=scene.children.slice(_b).filter(o=>!ferris||o!==ferris.g);window.__merge=mergeStatic(scene.children.slice(0,STATIC_N).concat(_late))}
+{const _b=scene.children.length;SPECIAL.push(()=>{ /* منارة عدن + مسجد العيدروس (كريتر) */
+  {const x=-130,z=400,y0=groundAt(x,z),st=new THREE.MeshLambertMaterial({color:"#efe6cf"}),wd=new THREE.MeshLambertMaterial({color:"#6b4a2a"});
+   const add=(g,m,y)=>{const o=new THREE.Mesh(g,m);o.position.set(x,y0+y,z);scene.add(o);return o};
+   add(new THREE.CylinderGeometry(3.4,3.9,2,8),st,1);add(new THREE.CylinderGeometry(1.7,2.9,17,8),st,10.5);add(new THREE.CylinderGeometry(2.8,1.9,.9,8),wd,19.3);
+   add(new THREE.CylinderGeometry(2.8,2.8,.9,8,1,true),wd,20.2);add(new THREE.CylinderGeometry(1.25,1.5,3.8,8),st,21.6);add(new THREE.ConeGeometry(1.7,2.6,8),wd,24.8);
+   for(let i=0;i<4;i++){const w=new THREE.Mesh(new THREE.BoxGeometry(.5,1.3,.12),wd);const a=i*Math.PI/2+.39;w.position.set(x+Math.sin(a)*2.25,y0+5+i*3.2,z+Math.cos(a)*2.25);w.rotation.y=a;scene.add(w)}
+   circles.push({x,z,r:3.7});PLACES.push({x,z,r:26,n:"منارة عدن"})}
+  mosque(62,396,.6);PLACES.push({x:62,z:396,r:26,n:"مسجد العيدروس"})});
+SPECIAL.forEach(f=>f());fixWorld();const _late=scene.children.slice(_b).filter(o=>!ferris||o!==ferris.g);window.__merge=mergeStatic(scene.children.slice(0,STATIC_N).concat(_late))}
 /* ================= player ================= */
 const COLORS=["#c8272d","#f2f2ee","#1d1f24","#e8743b","#2f6fd6","#f2c230","#1fa3a8"];
 let myColor=SAVE.color;
@@ -2369,11 +2388,15 @@ async function netPeer(){
   try{await loadScript("https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js")}catch(e){setNet("err","تعذر تحميل مكتبة الأونلاين");return null}
   const hostId="aden-streets-"+slug(myCode);
   let peer=null,isHost=false,migrating=false;const conns=new Map(),calls=new Map(),audios=new Map();let mic=null;
-  const status=()=>{const n=Object.keys(remotes).length;setNet("ok",(isHost?"أنت المضيف":"متصل بالمضيف")+(n?` · ${n+1} لاعبين`:` · غرفة «${myCode}» · بانتظار صاحبك`))};
+  const PCFG={debug:0,config:{iceServers:[{urls:["stun:stun.l.google.com:19302","stun:stun1.l.google.com:19302","stun:stun.cloudflare.com:3478"]},{urls:["turn:eu-0.turn.peerjs.com:3478","turn:us-0.turn.peerjs.com:3478"],username:"peerjs",credential:"peerjsp"},{urls:["turn:openrelay.metered.ca:80","turn:openrelay.metered.ca:443","turn:openrelay.metered.ca:443?transport=tcp"],username:"openrelayproject",credential:"openrelayproject"}],sdpSemantics:"unified-plan"}};
+  let joinT=0,rejoinN=0;
+  function rejoin(why){if(migrating)return;migrating=true;clearTimeout(joinT);setNet("warn",why||"إعادة الاتصال بالغرفة…");calls.forEach(c=>{try{c.close()}catch(e){}});calls.clear();try{peer.destroy()}catch(e){}conns.clear();rejoinN++;setTimeout(()=>{migrating=false;startHost()},500+Math.random()*1500+Math.min(6000,rejoinN*700))}
+  function voiceOK(id){try{const c=calls.get(id);return !!(c&&c.peerConnection&&/connected|completed/.test(c.peerConnection.iceConnectionState))}catch(e){return false}}
+  const status=()=>{const ids=Object.keys(remotes),n=ids.length;let v=0;for(const id of ids)if(voiceOK(id))v++;setNet("ok",(isHost?"أنت المضيف":"متصل بالمضيف")+(n?` · ${n+1} لاعبين · 🔊 ${v}/${n}`:` · غرفة «${myCode}» · بانتظار صاحبك`))};
   function setupConn(conn){
-    conn.on("open",()=>{conns.set(conn.peer,conn);status();if(String(peer.id)<String(conn.peer))setTimeout(()=>{if(!calls.has(conn.peer))callPeer(conn.peer)},600)});
+    conn.on("open",()=>{conns.set(conn.peer,conn);if(conn.peer===hostId){clearTimeout(joinT);rejoinN=0}status();if(String(peer.id)<String(conn.peer))setTimeout(()=>{if(!calls.has(conn.peer))callPeer(conn.peer)},600)});
     conn.on("data",d=>{if(!d||typeof d!=="object")return;const id=String(d.id||conn.peer).slice(0,64);if(id===peer.id)return;if(d.ev&&d.ev.k==="vc"){if(d.ev.to===peer.id)setTimeout(()=>callPeer(id),200)}else if(d.ev)onEvent(id,d.ev);else upsertRemote(id,d);if(isHost)for(const[pid,c]of conns)if(pid!==conn.peer&&c.open)c.send(d)});
-    conn.on("close",()=>{conns.delete(conn.peer);removeRemote(conn.peer);status();if(!isHost&&conn.peer===hostId&&!migrating){migrating=true;setNet("warn","المضيف طلع — نرتّب الغرفة…");calls.forEach(c=>{try{c.close()}catch(e){}});calls.clear();try{peer.destroy()}catch(e){}conns.clear();setTimeout(()=>{migrating=false;startHost()},400+Math.random()*1800)}});
+    conn.on("close",()=>{conns.delete(conn.peer);removeRemote(conn.peer);status();if(!isHost&&conn.peer===hostId&&!migrating)rejoin("المضيف طلع — نرتّب الغرفة…")});
     conn.on("error",()=>{});
   }
   let silent=null;function localStream(){if(mic)return mic;if(!silent){try{const ctx=(typeof AC!=="undefined"&&AC)||new (window.AudioContext||window.webkitAudioContext)();const d=ctx.createMediaStreamDestination();const g=ctx.createGain();g.gain.value=0;const o=ctx.createOscillator();o.connect(g);g.connect(d);o.start();silent=d.stream}catch(e){silent=new MediaStream()}}return silent}
@@ -2398,21 +2421,29 @@ async function netPeer(){
     const now=performance.now();if(lv>.012)DUCK.hold=now+450;const tgt=now<DUCK.hold?.07:1;try{DUCK.g.gain.setTargetAtTime(tgt,DUCK.ctx.currentTime,tgt<1?.015:.12)}catch(e){}},40)}
   function redial(){const targets=new Set(isHost?[...conns.keys()]:[hostId]);for(const id in remotes)targets.add(id);targets.forEach(id=>{const c=calls.get(id);if(c&&c.open)pushMic(c);if(String(peer.id)<String(id))callPeer(id);else{const d={id:peer.id,ev:{k:"vc",to:id}};for(const cn of conns.values())if(cn.open)try{cn.send(d)}catch(e){}}})}
   function callPeer(pid){try{const c=peer.call(pid,localStream());if(!c)return;c._tx=true;handleCall(c)}catch(e){}}
-  function startHost(){return new Promise(res=>{peer=new Peer(hostId,{debug:0});
+  function startHost(){return new Promise(res=>{isHost=false;peer=new Peer(hostId,PCFG);
     peer.on("open",()=>{isHost=true;status();res()});peer.on("connection",setupConn);peer.on("call",onCall);
-    peer.on("error",e=>{if(e.type==="unavailable-id"){peer.destroy();startGuest().then(res)}else{setNet("err","خطأ اتصال: "+e.type);res()}});
+    peer.on("error",e=>{if(e.type==="unavailable-id"){peer.destroy();startGuest().then(res)}else if(e.type==="peer-unavailable"){res()}else{setNet(/network|socket|server|disconnected/.test(e.type)?"warn":"err","خطأ اتصال: "+e.type);res()}});
     peer.on("disconnected",()=>{setNet("warn","إعادة الاتصال…");try{peer.reconnect()}catch(e){}})})}
-  function startGuest(){return new Promise(res=>{peer=new Peer({debug:0});peer.on("call",onCall);
-    peer.on("open",()=>{const c=peer.connect(hostId);setupConn(c);setNet("warn","جارٍ الاتصال بالمضيف…");res()});peer.on("disconnected",()=>{try{peer.reconnect()}catch(e){}});
-    peer.on("error",e=>{if(e.type==="peer-unavailable"){setNet("err","المضيف خرج — أعد الدخول");}else setNet("err","خطأ اتصال: "+e.type)})})}
+  function startGuest(){return new Promise(res=>{peer=new Peer(PCFG);peer.on("call",onCall);
+    peer.on("open",()=>{const c=peer.connect(hostId);setupConn(c);setNet("warn","جارٍ الاتصال بالمضيف…");clearTimeout(joinT);joinT=setTimeout(()=>{const h=conns.get(hostId);if(!(h&&h.open))rejoin("ما قدرنا نوصل للمضيف — نحاول مرة ثانية…")},9000);res()});peer.on("disconnected",()=>{try{peer.reconnect()}catch(e){}});
+    peer.on("error",e=>{if(e.type==="peer-unavailable"){const h=conns.get(hostId);if(!(h&&h.open))rejoin("المضيف مش موجود — نرتّب الغرفة…")}else if(/network|server-error|socket-error|socket-closed|disconnected/.test(e.type)){setNet("warn","الشبكة ضعيفة — نعيد الاتصال…");setTimeout(()=>{const h=conns.get(hostId);if(!(h&&h.open))rejoin()},2500)}else setNet("err","خطأ اتصال: "+e.type)})})}
   async function micRevive(){if(!mic||micRevive.busy)return false;micRevive.busy=true;try{const old=mic,was=old.getAudioTracks().some(t=>t.enabled);let n=null;for(let i=0;i<3&&!n;i++){try{n=await openMic()}catch(e){await new Promise(r=>setTimeout(r,600*(i+1)))}}
       if(!n)return false;n.getAudioTracks().forEach(t=>t.enabled=was);mic=n;try{old.getTracks().forEach(t=>t.stop());if(old._raw)old._raw.getTracks().forEach(t=>t.stop())}catch(e){}howlWatch(mic._raw||mic);fixAudioAfterMic();redial();return true}finally{micRevive.busy=false}}
-  let micMuteSince=0,micLast=0;
+  let micMuteSince=0,micLast=0,micTry=0;const vcLast=new Map();
   function micGuard(){if(!mic||document.hidden)return;const t=(mic._raw||mic).getAudioTracks()[0];const now=Date.now();
     let bad=!t||t.readyState==="ended";if(!bad&&t.muted){if(!micMuteSince)micMuteSince=now;if(now-micMuteSince>3500)bad=true}else if(t&&!t.muted)micMuteSince=0;
-    if(bad&&now-micLast>2500){micLast=now;micMuteSince=0;micRevive().then(ok=>{if(ok)toast("🎤 رجّعت المايك تلقائياً",1800)})}
+    if(!bad&&t&&!t.muted&&now-micLast>20000)micTry=0;
+    if(bad&&now-micLast>[2500,10000,30000,60000][Math.min(3,micTry)]){micLast=now;micMuteSince=0;micTry++;micRevive().then(ok=>{if(ok)toast("🎤 رجّعت المايك تلقائياً",1800)})}
     try{const mt=mic.getAudioTracks()[0];for(const c of calls.values()){const pc=c.peerConnection;if(!pc||!c.open)continue;const sd=pc.getSenders().find(x=>x.track&&x.track.kind==="audio");if(sd&&mt&&sd.track!==mt)pushMic(c)}}catch(e){}
     for(const a of audios.values())if(a.paused&&a.srcObject)a.play().catch(()=>{})}
+  function voiceGuard(){if(document.hidden||migrating||!peer||peer.destroyed||!peer.open)return;const now=Date.now();
+    for(const id in remotes){if(voiceOK(id)){vcLast.delete(id);continue}const st=vcLast.get(id)||{since:now,last:0,n:0};if(!vcLast.has(id))vcLast.set(id,st);
+      if(now-st.since>6000&&now-st.last>[7000,9000,14000,20000][Math.min(3,st.n)]){st.last=now;st.n++;const c=calls.get(id);if(c){try{c.close()}catch(e){}calls.delete(id)}
+        if(String(peer.id)<String(id))callPeer(id);else{const d={id:peer.id,ev:{k:"vc",to:id}};for(const cn of conns.values())if(cn.open)try{cn.send(d)}catch(e){}}}}
+    for(const id of vcLast.keys())if(!remotes[id])vcLast.delete(id)}
+  function netHeal(){if(migrating||!peer)return;try{if(peer.destroyed){rejoin();return}if(peer.disconnected){try{peer.reconnect()}catch(e){}}if(!isHost){const h=conns.get(hostId);if(!(h&&h.open)&&peer.open)rejoin("انقطع الاتصال — نرجّعك للغرفة…")}}catch(e){}}
+  setInterval(voiceGuard,2500);document.addEventListener("visibilitychange",()=>{if(!document.hidden)setTimeout(netHeal,800)});addEventListener("online",()=>setTimeout(netHeal,800));
   setInterval(micGuard,1500);document.addEventListener("visibilitychange",()=>{if(!document.hidden)setTimeout(micGuard,300)});addEventListener("pageshow",()=>setTimeout(micGuard,300));
   await startHost();
   setInterval(()=>{for(const id in remotes)if(performance.now()-remotes[id].seen>6000)removeRemote(id);if(peer&&!peer.destroyed&&!migrating&&peer.open)status()},2000);
@@ -2608,7 +2639,7 @@ function missionSheet(){openSheet("المهمات",`<div class="list">
   b.querySelectorAll("[data-m]").forEach(x=>x.onclick=()=>{const m=x.dataset.m;if(m==="stop"){stopMission();closeSheet()}else if(m==="pstop"){stopPark();closeSheet()}else if(m==="park")startPark();else startMission(m)})})}
 function raceSheet(){const f=hasFriend(),np=Object.keys(remotes).length+1;const card=k=>{const T_=TRACKS[k],best=SAVE[T_.bk];return`<div class="card" style="flex-direction:column;align-items:stretch;gap:6px"><div><b>${T_.n}</b><br><span>${T_.d} · ${T_.cps.length} نقطة${best?` · رقمك: ${best.toFixed(1)} ث`:""}</span></div>
   <div class="row">${f?`<button class="pri" data-rm="${k}">🏁 سباق جماعي (${np} لاعبين)</button>`:""}<button class="${f?"":"pri"}" data-rs="${k}">⏱ ضد الوقت</button></div></div>`};
-  openSheet("سباق",RC.on?`<div class="row"><button class="pri warn" id="rq">انسحب من السباق</button></div>`:`<div class="list">${card("bridge")}${card("buraiqa")}</div>${f?"":`<p class="fine">لما يدخل أصحابك بنفس رمز الغرفة تقدرون تتسابقون كلكم مع بعض.</p>`}`,b=>{
+  openSheet("سباق",RC.on?`<div class="row"><button class="pri warn" id="rq">انسحب من السباق</button></div>`:`<div class="list">${card("drag")}${card("bridge")}${card("buraiqa")}</div>${f?"":`<p class="fine">لما يدخل أصحابك بنفس رمز الغرفة تقدرون تتسابقون كلكم مع بعض.</p>`}`,b=>{
   const q=b.querySelector("#rq");if(q)q.onclick=()=>{closeSheet();stopRace("انسحبت من السباق")};
   b.querySelectorAll("[data-rm]").forEach(x=>x.onclick=()=>{net&&net.ev({k:"race",a:"go",tr:x.dataset.rm});startRace(true,0,x.dataset.rm)});
   b.querySelectorAll("[data-rs]").forEach(x=>x.onclick=()=>startRace(false,0,x.dataset.rs))})}
@@ -3048,7 +3079,16 @@ const LM=[
  {k:"hotel",n:"فندق عدن",x:-240,z:130,r:70,tx:-300,tz:140,info:"من أشهر فنادق عدن، في خور مكسر قرب المطار، ويقابله دوار كبير أخضر فيه نافورة."},
  {k:"gold",n:"ساحل جولدمور",x:-930,z:-712,r:70,tx:-900,tz:-700,info:"من أشهر شواطئ عدن، في خليج هادئ بين الجبال قرب التواهي. تتزاحم فيه العائلات في الإجازات والأعياد بالخيام والمظلات، ويوصل له الطريق عبر نفق في الجبل."},
  {k:"arousa",n:"منتجع العروسة",x:-985,z:-500,r:40,tx:-985,tz:-509,info:"منتجع على قمة الجبل فوق ساحل جولدمور، يوصل له طريق جبلي ملتف وتحته البحر مباشرة، ومنه منظر بانورامي على الخليج والتواهي."},
- {k:"gate",n:"باب عدن",x:-60,z:384,r:24,tx:-60,tz:392,info:"مدخل كريتر من جهة العقبة. كانت عدن القديمة محاطة بالجبال، ويدخلها الناس عبر ممر العقبة الذي صار اليوم نفقاً يوصل إلى كريتر."}];
+ {k:"gate",n:"باب عدن",x:-60,z:384,r:24,tx:-60,tz:392,info:"مدخل كريتر من جهة العقبة. كانت عدن القديمة محاطة بالجبال، ويدخلها الناس عبر ممر العقبة الذي صار اليوم نفقاً يوصل إلى كريتر."},
+ {k:"minar",n:"منارة عدن",x:-130,z:400,r:28,tx:-130,tz:424,info:"منارة تاريخية قديمة في كريتر، مثمّنة الشكل وبيضاء اللون. بقيت واقفة لوحدها بعد أن اندثر المسجد الذي كانت تتبعه، وتُعد من أقدم المعالم الإسلامية الباقية في عدن."},
+ {k:"aidrus",n:"مسجد العيدروس",x:62,z:396,r:28,tx:62,tz:424,info:"من أشهر مساجد كريتر، يُنسب إلى الإمام أبي بكر بن عبدالله العيدروس الذي عاش في عدن قبل نحو خمسة قرون ودُفن فيه، وتُقام له زيارة سنوية معروفة عند أهل عدن."},
+ {k:"souq",n:"سوق كريتر · السوق الطويل",x:10,z:445,r:20,tx:10,tz:434,info:"من أقدم أسواق عدن في قلب كريتر: شارع طويل تصطف على جانبيه دكاكين الملابس والعطور والبخور والبهارات والذهب، ويزدحم بالناس خصوصاً قبل الأعياد."},
+ {k:"church",n:"كنيسة كريتر",x:-96,z:402,r:20,tx:-96,tz:424,info:"كنيسة قديمة من القرن التاسع عشر، بُنيت أيام الوجود البريطاني على مرتفع يُطل على كريتر، واستُخدم مبناها لاحقاً مقراً للمجلس التشريعي."},
+ {k:"abyan",n:"كورنيش ساحل أبين",x:204,z:-170,r:30,tx:196,tz:-170,info:"ساحل رملي طويل في خور مكسر يمتد على بحر العرب، وكورنيشه متنفَّس أهل عدن في العصر والمساء: مشي وجلسات شاي وكرة قدم على الرمل."},
+ {k:"airport",n:"مطار عدن الدولي",x:-580,z:-110,r:75,tx:-580,tz:-110,info:"مطار عدن في خور مكسر، من أقدم مطارات الجزيرة العربية. بدأ مطاراً عسكرياً في بدايات القرن العشرين ثم صار المطار المدني الرئيسي لعدن."},
+ {k:"refin",n:"مصافي عدن",x:-2090,z:-155,r:85,tx:-2090,tz:-155,info:"مصفاة النفط في البريقة (عدن الصغرى)، بدأ تشغيلها في منتصف خمسينيات القرن العشرين، وكانت من أكبر المنشآت الصناعية في المنطقة وارتبط بها ميناء الزيت."}];
+{const near=(x,z)=>{let b=null,bd=1e9;for(const r of ROADS){const dx=r[2]-r[0],dz=r[3]-r[1],L=dx*dx+dz*dz||1,t=Math.max(0,Math.min(1,((x-r[0])*dx+(z-r[1])*dz)/L)),px=r[0]+dx*t,pz=r[1]+dz*t,d=Math.hypot(x-px,z-pz);if(d<bd){bd=d;b=[px,pz]}}return b};
+ for(const L of LM)if(L.k==="airport"||L.k==="refin"||L.k==="abyan"){const p=near(L.x,L.z);if(p){L.tx=p[0];L.tz=p[1]}}}
 let lmT=0;const LMP={on:false};
 function stepLandmarks(dt){lmT+=dt;if(lmT<.5)return;lmT=0;if(!Array.isArray(SAVE.lm))SAVE.lm=[];const qx=WALK.on?WALK.x:P.x,qz=WALK.on?WALK.z:P.z;
   for(const L of LM){if(SAVE.lm.includes(L.k))continue;if(Math.hypot(L.x-qx,L.z-qz)<L.r){SAVE.lm.push(L.k);addCash(500);addPts(30);coin();bigMsg(`🏛️ ${L.n}<small>معلم جديد! +٥٠٠ ريال · ${SAVE.lm.length} من ${LM.length}</small>`,2600);saveNow();
@@ -3158,11 +3198,12 @@ function stepWorkshop(dt){if(!WS.bay)return;if(WSH.mech){const m=WSH.mech,u=m.us
 
 /* ---------- 2. jobs: water tanker, gas cylinders, ambulance ---------- */
 const JOB={on:false,k:null,st:"",stops:[],i:0,t:0,lim:0,cr:0,hp:1,stopT:0,load:null,pax:null,pay:0,bar:null};
-const JOB_N={water:"🚰 وايت ماء",gas:"🔥 توصيل غاز",amb:"🚑 إسعاف"};
+const JOB_N={water:"🚰 وايت ماء",gas:"🔥 توصيل غاز",amb:"🚑 إسعاف",fuel:"⛽ قاطرة وقود"};
 const stByName=s=>STATIONS.find(x=>x.n.includes(s))||STATIONS[0];
 function jobTarget(){return JOB.on?JOB.stops[JOB.i]:null}
 function setJobLoad(){if(JOB.load){car.remove(JOB.load);JOB.load=null}if(!JOB.on)return;const u=car.userData,cp=u.cargoPos||new THREE.Vector3(0,1.6,-.6);const G=new THREE.Group();
   if(JOB.k==="water"&&JOB.st!=="load"){const t=new THREE.Mesh(new THREE.CylinderGeometry(.62,.62,2.2,14),new THREE.MeshLambertMaterial({color:"#2f6fd6"}));t.rotation.x=Math.PI/2;G.add(t);const b=new THREE.Mesh(new THREE.BoxGeometry(.2,.2,2),M.white);b.position.y=.62;G.add(b)}
+  if(JOB.k==="fuel"&&JOB.st!=="load"){const t=new THREE.Mesh(new THREE.CylinderGeometry(.66,.66,2.3,14),new THREE.MeshLambertMaterial({color:"#c9ced6"}));t.rotation.x=Math.PI/2;G.add(t);for(const z of[-.7,.7]){const b=new THREE.Mesh(new THREE.CylinderGeometry(.68,.68,.14,14),new THREE.MeshLambertMaterial({color:"#d63a2f"}));b.rotation.x=Math.PI/2;b.position.z=z;G.add(b)}}
   if(JOB.k==="gas"&&JOB.st!=="load"){const n=JOB.stops.length-JOB.i;for(let k=0;k<n;k++){const c=new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,.62,10),new THREE.MeshLambertMaterial({color:k%2?"#e8402e":"#f2c230"}));c.position.set((k-1)*.42,0,0);G.add(c)}}
   if(JOB.k==="amb"){for(const s of[-1,1]){const l=new THREE.Mesh(new THREE.BoxGeometry(.5,.18,.3),new THREE.MeshBasicMaterial({color:s<0?"#ff2d2d":"#2f7bff"}));l.position.set(s*.3,0,0);G.add(l)}G.userData.amb=1}
   G.position.copy(cp);if(JOB.k==="amb"){G.position.y=(u.type==="bus"?3.4:u.type==="moto"?1.5:1.62);G.position.z=cp.z*.2}car.add(G);JOB.load=G}
@@ -3171,34 +3212,37 @@ function startJob(k){if(RC.on||CH.on){toast("خلّص السباق أو المط
   if(k==="water"){const s=stByName("الشيخ عثمان");const d=nearestDest(s.spawn.x,s.spawn.z,300,1500);JOB.stops=[{n:"تعبئة الماء — "+s.n,x:s.spawn.x,z:s.spawn.z,kind:"load"},{n:"بيت في "+d.n,x:d.x,z:d.z,kind:"drop"}];JOB.st="load";JOB.load2=1}
   else if(k==="gas"){const s=stByName("المنصورة");const L=[];let px=s.spawn.x,pz=s.spawn.z;for(let q=0;q<3;q++){const d=nearestDest(px,pz,90,700,L.map(o=>o.d));L.push({d});px=d.x;pz=d.z}
     JOB.stops=[{n:"مخزن الغاز — "+s.n,x:s.spawn.x,z:s.spawn.z,kind:"load"}].concat(L.map(o=>({n:"بيت في "+o.d.n,x:o.d.x,z:o.d.z,kind:"drop"})));JOB.st="load"}
+  else if(k==="fuel"){const pt=DEST.find(d=>d.n==="ميناء عدن")||DEST[0];const L=STATIONS.filter(x=>Math.hypot(x.spawn.x-pt.x,x.spawn.z-pt.z)>250);const s=pick(L.length?L:STATIONS);JOB.stops=[{n:"خزانات الوقود — ميناء عدن",x:pt.x,z:pt.z,kind:"load"},{n:s.n,x:s.spawn.x,z:s.spawn.z,kind:"drop"}];JOB.st="load"}
   else{const h=DEST.find(d=>d.n==="المستشفى");const p=nearestDest(h.x,h.z,250,1200,[h]);JOB.stops=[{n:"مريض في "+p.n,x:p.x,z:p.z,kind:"pick"},{n:"المستشفى",x:h.x,z:h.z,kind:"drop"}];JOB.st="go"}
   setJobLoad();const t=JOB.stops[0];mPick.position.set(t.x,0,t.z);mPick.visible=true;mDrop.visible=false;
-  toast(k==="water"?"🚰 روح عبّي الوايت من محطة الشيخ عثمان":k==="gas"?"🔥 روح خذ ٣ أسطوانات غاز من محطة المنصورة":"🚑 بلاغ إسعاف! روح خذ المريض بسرعة",3200)}
+  toast(k==="fuel"?"⛽ روح عبّي القاطرة من خزانات ميناء عدن":k==="water"?"🚰 روح عبّي الوايت من محطة الشيخ عثمان":k==="gas"?"🔥 روح خذ ٣ أسطوانات غاز من محطة المنصورة":"🚑 بلاغ إسعاف! روح خذ المريض بسرعة",3200)}
 function stopJob(msg){if(JOB.pax){scene.remove(JOB.pax);JOB.pax=null}JOB.on=false;setJobLoad();mPick.visible=mDrop.visible=false;arrow.visible=false;txPanel("");sirenOn(false);if(msg)toast(msg,2200)}
 function stepJob(dt,fwd){if(!JOB.on)return;const tg=jobTarget();if(!tg){stopJob();return}
-  if(P.hp<JOB.hp-.015){JOB.cr++;if(JOB.k==="amb")toast("🤕 المريض يتألم! انتبه للصدمات",1500);if(JOB.k==="water")toast("💦 انكب شوية ماء من الوايت!",1500);if(JOB.k==="gas")toast("⚠️ انتبه — معك أسطوانات غاز!",1500)}JOB.hp=P.hp;
+  if(P.hp<JOB.hp-.015){JOB.cr++;if(JOB.k==="amb")toast("🤕 المريض يتألم! انتبه للصدمات",1500);if(JOB.k==="water")toast("💦 انكب شوية ماء من الوايت!",1500);if(JOB.k==="gas")toast("⚠️ انتبه — معك أسطوانات غاز!",1500);if(JOB.k==="fuel")toast("⚠️ انتبه — القاطرة مليانة بترول!",1500)}JOB.hp=P.hp;
   if(JOB.k==="amb"&&JOB.st==="drop"){sirenOn(true);if(JOB.load)JOB.load.children.forEach((l,i)=>l.visible=((seaT*6|0)+i)%2===0)}
   const ring=JOB.stops[JOB.i].kind==="drop"?mDrop:mPick;ring.visible=true;ring.position.set(tg.x,0,tg.z);(ring===mDrop?mPick:mDrop).visible=false;ring.children[0].rotation.z+=dt;
   const dx=tg.x-P.x,dz=tg.z-P.z,dist=Math.hypot(dx,dz);{const gd=gpsDir(dx,dz);pointArrow(gd[0],gd[1],dist>12,ring===mDrop?"#3dd68c":"#f2c230")}
   const inside=dist<7.5,slow=Math.abs(fwd)<3.5;JOB.stopT=inside&&slow?JOB.stopT+dt:0;
   if(JOB.lim)JOB.t+=dt;const left=JOB.lim?Math.max(0,JOB.lim-JOB.t):0;
-  const head=JOB.k==="water"?(JOB.st==="load"?"🚰 روح عبّي الوايت":"🚰 وصّل الماء إلى"):JOB.k==="gas"?(JOB.st==="load"?"🔥 خذ الأسطوانات":`🔥 أسطوانة ${JOB.i} من ${JOB.stops.length-1} إلى`):(JOB.st==="go"?"🚑 روح خذ المريض":"🚑 ودّ المريض إلى");
+  const head=JOB.k==="fuel"?(JOB.st==="load"?"⛽ روح عبّي القاطرة":"⛽ وصّل الوقود إلى"):JOB.k==="water"?(JOB.st==="load"?"🚰 روح عبّي الوايت":"🚰 وصّل الماء إلى"):JOB.k==="gas"?(JOB.st==="load"?"🔥 خذ الأسطوانات":`🔥 أسطوانة ${JOB.i} من ${JOB.stops.length-1} إلى`):(JOB.st==="go"?"🚑 روح خذ المريض":"🚑 ودّ المريض إلى");
   txPanel(`<b>${head} ${JOB.st==="load"||JOB.st==="go"?"":tg.n}</b><span>${JOB.st==="load"||JOB.st==="go"?tg.n+" · ":""}${fmt(dist)} م${JOB.lim?` · ⏱ ${Math.ceil(left)} ث`:""}${JOB.cr?` · 💥 ${JOB.cr}`:""}</span>${inside&&!slow?"<em>وقّف داخل الدائرة</em>":""}`);
   if(JOB.stopT<.7)return;JOB.stopT=0;
   if(tg.kind==="load"||tg.kind==="pick"){frozen=1.2;
-    if(JOB.k==="amb"){JOB.pax=null;toast("🚑 المريض ركب! شغّلنا الصفارة — بسرعة وبدون صدمات",3000)}else toast(JOB.k==="water"?"🚰 تعبّى الوايت ٥٠٠٠ لتر":"🔥 حمّلت ٣ أسطوانات",2200);
+    if(JOB.k==="amb"){JOB.pax=null;toast("🚑 المريض ركب! شغّلنا الصفارة — بسرعة وبدون صدمات",3000)}else toast(JOB.k==="fuel"?"⛽ تعبّت القاطرة ٢٠٬٠٠٠ لتر — سُق بهدوء":JOB.k==="water"?"🚰 تعبّى الوايت ٥٠٠٠ لتر":"🔥 حمّلت ٣ أسطوانات",2200);
     JOB.i++;JOB.st="drop";const nx=JOB.stops[JOB.i];const d=Math.hypot(nx.x-P.x,nx.z-P.z);JOB.lim=Math.round(d/(JOB.k==="amb"?13:10)+(JOB.k==="amb"?18:30));JOB.t=0;setJobLoad();return}
   // drop
   let pay;if(JOB.k==="gas"){pay=Math.round((450+left*12)*Math.max(.4,1-.15*JOB.cr)/50)*50;JOB.pay+=pay;toast(`🔥 سلّمت الأسطوانة · +${fmt(pay)} ريال`,2000);coin();addCash(pay);
     JOB.i++;if(JOB.i<JOB.stops.length){const nx=JOB.stops[JOB.i];JOB.lim=Math.round(Math.hypot(nx.x-P.x,nx.z-P.z)/10+25);JOB.t=0;setJobLoad();return}
     const bonus=JOB.cr?0:600;if(bonus)addCash(bonus);addPts(70);SAVE.jobs=(SAVE.jobs||0)+1;DCH.add("job",1);DCH.add("gas",1);stopJob(`🔥 خلّصت توزيع الغاز!${bonus?` مكافأة بدون صدمات +${fmt(bonus)}`:""}`);return}
   if(JOB.k==="water"){pay=Math.round((1400+left*15)*Math.max(.3,1-.2*JOB.cr)/50)*50;addCash(pay);addPts(60);toast(`🚰 ${JOB.cr?"الماء وصل بس انكب منه شوية":"الوايت وصل مليان، الله يعطيك العافية"} · +${fmt(pay)} ريال`,3200)}
+  else if(JOB.k==="fuel"){pay=Math.round((2400+left*18)*Math.max(.25,1-.25*JOB.cr)/50)*50;addCash(pay);addPts(80);toast(`⛽ ${JOB.cr?"وصلت القاطرة بس فيها خدوش":"عبّيت المحطة بالسلامة، يعطيك العافية"} · +${fmt(pay)} ريال`,3400)}
   else{pay=Math.round((2200+left*30)*Math.max(.3,1-.2*JOB.cr)/50)*50;if(left<=0)pay=Math.round(pay*.5/50)*50;addCash(pay);addPts(left>0?120:50);toast(`🚑 ${left>0?"وصّلت المريض في الوقت! الدكاترة استلموه":"وصلت متأخر، بس الحمدلله المريض بخير"} · +${fmt(pay)} ريال`,3500)}
   coin();SAVE.jobs=(SAVE.jobs||0)+1;DCH.add("job",1);DCH.add(JOB.k,1);stopJob()}
 const _gpsGoal=gpsGoal;gpsGoal=function(){if(JOB.on){const t=jobTarget();if(t)return t}return _gpsGoal()};
 function jobsSheet(){openSheet("الوظائف",`<div class="list">
   <button data-j="water"><b>🚰 وايت ماء</b><span>عبّي الوايت من محطة الشيخ عثمان ووصّله لبيت. كل صدمة تكبّ من الماء</span></button>
   <button data-j="gas"><b>🔥 توصيل أسطوانات غاز</b><span>خذ ٣ أسطوانات من محطة المنصورة ووزّعها على ٣ بيوت، ومكافأة إذا ما صدمت</span></button>
+  <button data-j="fuel"><b>⛽ قاطرة وقود</b><span>عبّي القاطرة من خزانات ميناء عدن ووصّلها لمحطة بنزين. كل صدمة تنقص الأجرة</span></button>
   <button data-j="amb"><b>🚑 سيارة إسعاف</b><span>خذ المريض للمستشفى بأسرع وقت والصفارة شغالة، وبدون صدمات</span></button>
   <p class="fine">💼 خلّصت ${fmt(SAVE.jobs||0)} وظيفة · وتجيك اتصالات بشغل على الجوال 📱</p>
   ${JOB.on?`<button data-j="stop" class="warn"><b>⏹ أوقف الوظيفة</b><span>${JOB_N[JOB.k]}</span></button>`:""}</div>`,b=>b.querySelectorAll("[data-j]").forEach(x=>x.onclick=()=>{const k=x.dataset.j;if(k==="stop"){stopJob("أوقفت الوظيفة");closeSheet()}else startJob(k)}))}
@@ -3424,15 +3468,26 @@ function nearDock(){const q=qPos();for(let i=0;i<DOCKS.length;i++){const D=DOCKS
 function boardBoat(i){if(RC.on||CH.on||JOB.on||MS.mode||DRC.on){toast("خلّص اللي معك أول");return}if(!BO[i])return;const D=DOCKS[i];
   fadeDo(()=>{if(WALK.on)enterCar();BOAT.m=BO[i];BO[i]=null;Object.assign(BOAT,{on:true,x:D.bx,z:D.bz,r:D.br,v:0,from:i,wp:0});BOAT.m.userData.drv.visible=true;releaseAll();
     BOAT.cp.set(D.bx-Math.sin(D.br)*12,6,D.bz-Math.cos(D.br)*12);BOAT.cl.set(D.bx,1,D.bz);document.body.classList.add("boat");
-    toast(`⛵ ركبت القارب! سُق في البحر إلى ${i===0?"مرسى جولدمور — اتبع السهم الأزرق":"مرسى صيرة — اتبع السهم الأزرق"}`,4000)})}
-function leaveBoat(i){const D=DOCKS[i];fadeDo(()=>{BOAT.on=false;BOAT.v=0;if(BO[i]){const o=1-i;BO[o]=BO[i];BO[o].position.set(DOCKS[o].bx,0,DOCKS[o].bz);BO[o].rotation.set(0,DOCKS[o].br,0)}
+    toast(`⛵ ركبت القارب! سُق في البحر إلى ${i===0?"مرسى جولدمور — اتبع السهم الأزرق":"مرسى صيرة — اتبع السهم الأزرق"}`,4000);setTimeout(()=>toast("🎣 جديد: وقّف عند العوامات البرتقالية وصِد سمك، وبيعه عند المرسى",4200),4300)})}
+function leaveBoat(i){const D=DOCKS[i];sellFish();fadeDo(()=>{BOAT.on=false;BOAT.v=0;if(BO[i]){const o=1-i;BO[o]=BO[i];BO[o].position.set(DOCKS[o].bx,0,DOCKS[o].bz);BO[o].rotation.set(0,DOCKS[o].br,0)}
    BO[i]=BOAT.m;BOAT.m.position.set(D.bx,0,D.bz);BOAT.m.rotation.set(0,D.br,0);BOAT.m.userData.drv.visible=false;txPanel("");arrow.visible=false;
    teleport(D.cx,D.cz,D.cr);camPos.set(D.cx-Math.sin(D.cr)*9,5,D.cz-Math.cos(D.cr)*9);document.body.classList.remove("boat");
    if(i!==BOAT.from){DCH.add("boat",1);addPts(40);if(!SAVE.boatOk){SAVE.boatOk=1;addCash(800);toast("⚓ وصلت بالقارب! أول رحلة بحرية +٨٠٠ ريال — وسيارتك وصلت للمرسى",4000);return}}
    toast("⚓ نزلت من القارب — سيارتك تنتظرك عند المرسى",3000)})}
 const _stepPlayer=stepPlayer;stepPlayer=function(dt){if(LMP.on&&!WALK.on){P.thr=0;P.brk=0;return Math.hypot(P.vx,P.vz)}if(BOAT.on){P.vx=P.vz=0;P.thr+=((input.gas?1:0)-P.thr)*Math.min(1,dt*3);return 0}return _stepPlayer(dt)};
 const BWP=[[290,475],[425,475],[425,-520],[150,-800],[-1040,-800]];
-function stepBoat(dt){const B=BOAT;const bm=B.m;B.bob+=dt;
+/* ---------- fishing from the boat: stop at an orange buoy, catch fish, sell them at the dock ---------- */
+const FSH={n:0,max:6,t:0,spots:[[292,522],[400,505],[425,372],[312,335],[330,-120],[-600,-800]].map(([x,z])=>({x,z,cd:0,m:null})),hint:0};
+for(const s of FSH.spots){const g=new THREE.Group();const b=new THREE.Mesh(new THREE.SphereGeometry(.9,12,8),new THREE.MeshLambertMaterial({color:"#ff7a1a"}));b.position.y=.5;g.add(b);
+  const p=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,2.6,6),new THREE.MeshLambertMaterial({color:"#222"}));p.position.y=1.9;g.add(p);const f=new THREE.Mesh(new THREE.BoxGeometry(.9,.55,.04),new THREE.MeshLambertMaterial({color:"#ffe14a"}));f.position.set(.45,2.9,0);g.add(f);g.position.set(s.x,0,s.z);scene.add(g);s.m=g}
+function stepFish(dt){const B=BOAT;for(const s of FSH.spots){if(s.cd>0)s.cd-=dt;s.m.visible=s.cd<=0;s.m.position.y=Math.sin(B.bob*1.6+s.x)*.12}
+  if(!B.on){FSH.t=0;return}let near=null;for(const s of FSH.spots)if(s.cd<=0&&Math.hypot(B.x-s.x,B.z-s.z)<13){near=s;break}
+  if(!near){FSH.t=0;return}if(FSH.n>=FSH.max){if(performance.now()>FSH.hint){FSH.hint=performance.now()+6000;toast("🐟 القارب مليان سمك — ارجع للمرسى وبيعه",2400)}return}
+  if(Math.abs(B.v)>3.5){FSH.t=0;if(performance.now()>FSH.hint){FSH.hint=performance.now()+5000;toast("🎣 وقّف القارب عند العوامة عشان تصيد",2000)}return}
+  FSH.t+=dt;if(FSH.t>=3){FSH.t=0;near.cd=45;FSH.n++;coin();toast(`🐟 صدت سمكة! (${FSH.n} من ${FSH.max}) — بيعها عند المرسى`,2400)}
+  else if(performance.now()>FSH.hint){FSH.hint=performance.now()+3500;toast("🎣 جالس تصيد… خلّك واقف",1500)}}
+function sellFish(){if(!FSH.n)return;const n=FSH.n,c=n*250;FSH.n=0;addCash(c);addPts(n*10);SAVE.fish=(SAVE.fish||0)+n;saveNow();setTimeout(()=>{coin();toast(`🐟 بعت ${n} سمك في المرسى — +${c} ريال`,3600)},3400)}
+function stepBoat(dt){const B=BOAT;const bm=B.m;B.bob+=dt;stepFish(dt);
   for(const m of BO){if(!m)continue;m.position.y=-.05+Math.sin(B.bob*1.3+m.position.x)*.08;m.rotation.z=Math.sin(B.bob*.9+m.position.z)*.03}
   if(!B.on)return;const lock=uiLock||frozen>0;const gas=!lock&&input.gas,back=!lock&&input.back,nit=!lock&&input.nitro;
   const max=nit?30:21;if(gas)B.v+=(nit?9:6)*dt;else if(back)B.v-=7*dt;B.v-=B.v*(gas?.12:.45)*dt;B.v=Math.max(-5,Math.min(max,B.v));
@@ -3510,16 +3565,16 @@ function openPhone(){if(!playing)return;closeSheet();PHN.el.hidden=false;uiLock=
   $("phApps").innerHTML=APPS.map(([k,i,n,c])=>`<button data-app="${k}" class="${k==="day"&&pend?"badge":""}"><b style="background:${c}">${i}</b>${n}${k==="day"&&pend?`<i>${pend}</i>`:""}</button>`).join("");
   $("phClock").firstChild.nodeValue=gameClock();$("phDate").textContent=`💰 ${fmt(SAVE.cash)} ريال · ⭐ ${fmt(SAVE.pts||0)}`;$("phTime").textContent=gameClock();
   $("phApps").querySelectorAll("[data-app]").forEach(b=>b.onclick=()=>{const k=b.dataset.app;closePhone();
-    ({map:()=>openMap(),mis:missionSheet,job:jobsSheet,day:dailySheet,cam:()=>photoMode(true),lb:lbSheet,chat:chatSheet,cl:clothesSheet,radio:radioSheet,ev:eventsSheet,save:saveSheet,set:settingsSheet})[k]()})}
+    ({map:()=>openMap(),mis:missionSheet,job:jobsSheet,day:dailySheet,cam:()=>photoMode(true),lb:lbSheet,chat:chatSheet,cl:clothesSheet,radio:radioSheet,ev:eventsSheet,save:saveSheet,set:settingsSheet,food:foodGuide,bank:bankSheet,tre:treSheet,ach:achSheet,plate:plateSheet})[k]()})}
 function closePhone(){if(PHN.el.hidden)return;PHN.el.hidden=true;uiLock=!$("sheet").hidden||!$("bigmap").hidden||PHO.on}
 $("phHome").onclick=closePhone;
 {const t=document.querySelector("#hud .top"),b=document.createElement("button");b.className="chip ic";b.id="phoneBtn";b.type="button";b.setAttribute("aria-label","الجوال");b.textContent="📱";b.onclick=()=>PHN.el.hidden?openPhone():closePhone();t.insertBefore(b,$("radioBtn"))}
 addEventListener("keydown",e=>{if(!playing||e.target&&e.target.tagName==="INPUT")return;if(e.code==="KeyP"){PHN.el.hidden?openPhone():closePhone()}if(e.code==="KeyO")photoMode(!PHO.on);if(e.code==="Escape"){if(PHO.on)photoMode(false);closePhone()}});
 PHN.call=xel("div","xcall",`<div class="av">📞</div><div class="tx"><b id="clWho"></b><span id="clMsg"></span></div><button id="clNo" style="background:#e5484d" aria-label="رفض">✕</button><button id="clYes" style="background:#2e8b57" aria-label="قبول">✓</button>`);PHN.call.hidden=true;
-const CALLERS=[["أبو محمد — حي الشيخ عثمان","water","«يا خبير، الماء مقطوع عندنا، تجيب لنا وايت؟»"],["أم سالم — المنصورة","gas","«خلص الغاز وعندنا عزومة، تقدر توصّل أسطوانات؟»"],["طوارئ مستشفى عدن","amb","«عندنا بلاغ مريض، نحتاج سواق إسعاف الحين!»"],["صاحب مطعم المندي","delivery","«عندي طلبات كثير، تشتغل توصيل؟»"],["مكتب تاكسي عدن","taxi","«فيه زباين ينتظرون، تاخذ مشاوير؟»"],["مكتب السياحة","tour","«عندنا سائح يبي يشوف معالم عدن»"]];
+const CALLERS=[["أبو محمد — حي الشيخ عثمان","water","«يا خبير، الماء مقطوع عندنا، تجيب لنا وايت؟»"],["أم سالم — المنصورة","gas","«خلص الغاز وعندنا عزومة، تقدر توصّل أسطوانات؟»"],["صاحب محطة بنزين","fuel","«المحطة فضيت يا خبير، نحتاج قاطرة وقود اليوم»"],["طوارئ مستشفى عدن","amb","«عندنا بلاغ مريض، نحتاج سواق إسعاف الحين!»"],["صاحب مطعم المندي","delivery","«عندي طلبات كثير، تشتغل توصيل؟»"],["مكتب تاكسي عدن","taxi","«فيه زباين ينتظرون، تاخذ مشاوير؟»"],["مكتب السياحة","tour","«عندنا سائح يبي يشوف معالم عدن»"]];
 function ringCall(){const c=pick(CALLERS);PHN.offer=c;$("clWho").textContent=c[0];$("clMsg").textContent=c[2];PHN.call.hidden=false;PHN.ringT=14;if(AC){const t=AC.currentTime;for(let k=0;k<3;k++){tone(t+k*.9,880,.25,.06,"sine");tone(t+k*.9+.3,988,.25,.06,"sine")}}}
 function endCall(){PHN.call.hidden=true;PHN.offer=null}
-$("clNo").onclick=()=>{endCall();toast("📵 رفضت الاتصال",1000)};$("clYes").onclick=()=>{const c=PHN.offer;endCall();if(!c)return;if(["water","gas","amb"].includes(c[1]))startJob(c[1]);else startMission(c[1])};
+$("clNo").onclick=()=>{endCall();toast("📵 رفضت الاتصال",1000)};$("clYes").onclick=()=>{const c=PHN.offer;endCall();if(!c)return;if(["water","gas","amb","fuel"].includes(c[1]))startJob(c[1]);else startMission(c[1])};
 function stepPhone(dt){if(!PHN.el.hidden){const c=gameClock();$("phTime").textContent=c;$("phClock").firstChild.nodeValue=c}
   if(!PHN.call.hidden){PHN.ringT-=dt;if(PHN.ringT<=0){endCall();toast("📵 فاتك اتصال",1200)}return}
   const busy=!OPT.calls||uiLock||MS.mode||JOB.on||RC.on||CH.on||PK.on||BOAT.on||DRC.on||WSH.on||TUT.on||PHO.on||WALK.inside;if(busy)return;PHN.cT-=dt;if(PHN.cT<=0){PHN.cT=rr(170,280);ringCall()}}
@@ -3561,6 +3616,129 @@ function eventsSheet(){const seg=(k,arr)=>`<div class="seg">${arr.map(([v,n])=>`
    <div class="row"><button id="tutAgain">🎓 أعد شرح التحكم</button></div>`,b=>{
    b.querySelectorAll("[data-o]").forEach(x=>x.onclick=()=>{const k=x.dataset.o;OPT[k]=k==="calls"||k==="news"?+x.dataset.v:x.dataset.v;saveNow();eventsSheet()});b.querySelector("#tutAgain").onclick=()=>{closeSheet();startTut()}})}
 
+
+/* ================= batch P1: restaurants & cafes, bank transfer, group treasure, achievements, tunnel echo, Eid, custom plate ================= */
+document.head.insertAdjacentHTML("beforeend",`<style>
+#xtre{position:fixed;left:50%;transform:translateX(-50%);top:calc(172px + env(safe-area-inset-top,0px));background:rgba(13,26,34,.88);color:#ffd36b;padding:6px 14px;border-radius:999px;font-weight:700;font-size:13px;z-index:30;pointer-events:none;white-space:nowrap;border:1px solid rgba(255,211,107,.45)}
+@media (max-width:640px){#xtre{top:calc(250px + env(safe-area-inset-top,0px));font-size:12px}}
+body.photo #xtre{display:none}
+#xph .apps{max-height:62vh;overflow-y:auto}
+</style>`);
+const esc=s=>String(s==null?"":s).replace(/[<>&"]/g,"").slice(0,24);
+/* ---- find a free plot beside a flat road (deterministic, so every player gets the same spot) ---- */
+const P1_TAKEN=[];
+function plotOK(x,z,rad){if(isWater(x,z)||elevAt(x,z)!==null)return false;for(const[ox,oz]of[[0,0],[rad,rad],[-rad,rad],[rad,-rad],[-rad,-rad]])if(Math.abs(groundAt(x+ox,z+oz))>.4||isWater(x+ox,z+oz))return false;
+  if(collide(x,z,rad+1.5).hit)return false;
+  for(const r of ROADS){const dx=r[2]-r[0],dz=r[3]-r[1],L2=dx*dx+dz*dz||1,t=Math.max(0,Math.min(1,((x-r[0])*dx+(z-r[1])*dz)/L2));if(Math.hypot(x-(r[0]+dx*t),z-(r[1]+dz*t))<RW/2+rad+1.5)return false}
+  for(const R of ROUND)if(Math.hypot(x-R.x,z-R.z)<RPAD(R.r)+rad+8)return false;
+  for(const L of LM)if(Math.hypot(x-L.x,z-L.z)<rad+16)return false;
+  for(const s of STATIONS)if(Math.hypot(x-s.x,z-s.z)<rad+34)return false;
+  for(const t of P1_TAKEN)if(Math.hypot(x-t[0],z-t[1])<rad+t[2]+8)return false;
+  return true}
+function plotNear(ax,az,rad,extra){const segs=[];for(const r of ROADS){const dx=r[2]-r[0],dz=r[3]-r[1],L=Math.hypot(dx,dz);if(L<40)continue;const t=Math.max(0,Math.min(1,((ax-r[0])*dx+(az-r[1])*dz)/(L*L)));const px=r[0]+dx*t,pz=r[1]+dz*t;if(elevAt(px,pz)!==null)continue;segs.push({r,L,t,d:Math.hypot(ax-px,az-pz),ux:dx/L,uz:dz/L})}
+  segs.sort((a,b)=>a.d-b.d);const off=RW/2+rad+3.5+(extra||0);
+  for(const s of segs.slice(0,8)){if(s.d>260)break;for(let k=0;k<=16;k++)for(const sg of k?[1,-1]:[1]){const tt=s.t*s.L+sg*k*9;if(tt<14||tt>s.L-14)continue;const cx=s.r[0]+s.ux*tt,cz=s.r[1]+s.uz*tt;
+    for(const side of[1,-1]){const x=cx+s.uz*side*off,z=cz-s.ux*side*off;if(plotOK(x,z,rad)){P1_TAKEN.push([x,z,rad]);return{x,z,fx:-s.uz*side,fz:s.ux*side,rx:cx,rz:cz}}}}}
+  return null}
+
+/* ---- 1. مطاعم الشرق الأوسط · مطاعم الزربيان · مقاهي الشاهي العدني ---- */
+const FOODK={
+ sharq:{c:"#b23a2e",c2:"#f2c230",ic:"🍖",tag:"مطاعم الشرق الأوسط — مندي ومشاوي وأكلات يمنية على أصولها",menu:[["مندي لحم 🍖",800,{b:300,hp:.12,n:1},"شبع ٥ دقايق + إصلاح بسيط + نيترو كامل"],["فحسة وسلتة مع ملوّح 🥘",500,{b:240,hp:.08},"شبع ٤ دقايق + إصلاح بسيط"],["عصير ليم بالنعناع 🍹",150,{n:1,b:60},"نيترو كامل + نشاط دقيقة"]]},
+ zurb:{c:"#1f6f54",c2:"#ffd36b",ic:"🍛",tag:"الزربيان العدني — رز ولحم وبطاط بالبهارات العدنية",menu:[["زربيان لحم 🍛",700,{b:300,hp:.12},"شبع ٥ دقايق + إصلاح بسيط"],["زربيان دجاج 🍗",500,{b:220,hp:.08},"شبع ٣ دقايق ونص + إصلاح بسيط"]]},
+ tea:{c:"#7a4a22",c2:"#f7e3b0",ic:"☕",tag:"شاهي عدني ملبّن بالهيل والقرنفل — على أصوله",menu:[["شاهي عدني ملبّن ☕",100,{n:1,b:60},"نيترو كامل + نشاط دقيقة"],["شاهي وخمير 🥯",200,{n:1,b:120,hp:.03},"نيترو كامل + نشاط دقيقتين"]]}};
+const FOOD=[
+ {k:"sharq",n:"مطاعم الشرق الأوسط — المنصورة",ax:-900,az:180},{k:"sharq",n:"مطاعم الشرق الأوسط — خور مكسر",ax:-150,az:60},
+ {k:"zurb",n:"مطعم الزربيان العدني — كريتر",ax:-30,az:430},{k:"zurb",n:"مطعم الزربيان العدني — الشيخ عثمان",ax:-1295,az:60},
+ {k:"tea",n:"مقهى الشاهي العدني — كريتر",ax:120,az:430},{k:"tea",n:"مقهى الشاهي العدني — المعلا",ax:-120,az:-400},{k:"tea",n:"مقهى الشاهي العدني — التواهي",ax:-560,az:-545}];
+function buildFood(S){const p=plotNear(S.ax,S.az,5.6);if(!p)return;const K=FOODK[S.k],G=new THREE.Group(),lm=c=>new THREE.MeshLambertMaterial({color:c});
+  const add=(g,m,x,y,z)=>{const o=new THREE.Mesh(g,m);o.position.set(x,y,z);G.add(o);return o};
+  add(new THREE.BoxGeometry(10,4.4,6.5),lm("#efe6d2"),0,2.2,0);add(new THREE.BoxGeometry(10.4,.35,6.9),lm("#4a3a2c"),0,4.55,0);
+  add(new THREE.BoxGeometry(10,1.1,.3),lm(K.c),0,3.85,3.3);const aw=add(new THREE.BoxGeometry(10,.2,2.6),lm(K.c),0,3.05,4.4);aw.rotation.x=.2;
+  add(new THREE.BoxGeometry(1.7,2.7,.12),lm("#3a2a1c"),-2.8,1.35,3.28);add(new THREE.BoxGeometry(3.8,1.6,.12),new THREE.MeshLambertMaterial({color:"#9fd0e6",emissive:"#3a4a20",emissiveIntensity:.5}),1.8,2,3.28);
+  add(new THREE.BoxGeometry(9.2,1.9,.25),lm("#1c1c1c"),0,5.75,3.05);
+  const short=S.n.split(" — ")[0];const tx=canvasTex(512,104,(g,w,h)=>{g.fillStyle=K.c;g.fillRect(0,0,w,h);g.strokeStyle=K.c2;g.lineWidth=6;g.strokeRect(5,5,w-10,h-10);g.fillStyle=K.c2;g.font="800 46px Tajawal, system-ui, sans-serif";g.textAlign="center";g.textBaseline="middle";g.fillText(short,w/2,h/2+3)},false);
+  const sg=new THREE.Mesh(new THREE.PlaneGeometry(8.9,1.7),new THREE.MeshBasicMaterial({map:tx}));sg.position.set(0,5.75,3.19);G.add(sg);
+  if(S.k==="tea")for(const sx of[-3,0,3]){add(new THREE.CylinderGeometry(.6,.6,.08,12),lm("#d9c7a3"),sx,.8,5.6);add(new THREE.CylinderGeometry(.07,.07,.8,6),lm("#333"),sx,.4,5.6);for(const d of[-.95,.95])add(new THREE.BoxGeometry(.42,.5,.42),lm(K.c),sx+d,.25,5.6)}
+  G.position.set(p.x,groundAt(p.x,p.z),p.z);G.rotation.y=Math.atan2(p.fx,p.fz);scene.add(G);circles.push({x:p.x,z:p.z,r:5.3});
+  S.x=p.x;S.z=p.z;S.dx=p.x+p.fx*7.5;S.dz=p.z+p.fz*7.5;S.rx=p.rx;S.rz=p.rz;PLACES.push({x:p.x,z:p.z,r:20,n:short})}
+FOOD.forEach(S=>{try{buildFood(S)}catch(e){}});
+function foodSheet(S){const K=FOODK[S.k];openSheet(K.ic+" "+S.n,`<p class="fine">${K.tag}</p><div class="list">${K.menu.map((m,i)=>`<div class="card"><div><b>${m[0]}</b><br><span>${m[3]}</span></div><button class="pri" data-f="${i}">${fmt(m[1])} ريال</button></div>`).join("")}</div>`,
+  b=>b.querySelectorAll("[data-f]").forEach(x=>x.onclick=()=>{const m=K.menu[+x.dataset.f];if(SAVE.cash<m[1]){toast(`ما معك ${fmt(m[1])} ريال`,1500);return}const e=m[2];addCash(-m[1]);if(e.n)P.nitro=1;if(e.b)BUFF.t=Math.max(BUFF.t,e.b);if(e.hp&&P.hp<1){P.hp=Math.min(1,P.hp+e.hp);paintDamage()}
+    addPts(Math.round(m[1]/40));SAVE.meals=(SAVE.meals||0)+1;saveNow();coin();closeSheet();toast(`😋 بالعافية! ${m[0]} — ${m[3]}`,3400)}))}
+function foodGuide(){const q=qPos();const L=FOOD.filter(S=>S.x!=null).map(S=>({S,d:Math.hypot(S.x-q.x,S.z-q.z)})).sort((a,b)=>a.d-b.d);
+  openSheet("🍽️ مطاعم ومقاهي عدن",`<p class="fine">وقّف سيارتك قدّام المحل واضغط الزر عشان تطلب.</p><div class="list">${L.map((o,i)=>`<div class="card"><div><b>${FOODK[o.S.k].ic} ${o.S.n}</b><br><span>يبعد ${fmt(o.d)} م</span></div><button data-g="${i}">🧭 خذني</button></div>`).join("")}</div>`,
+  b=>b.querySelectorAll("[data-g]").forEach(x=>x.onclick=()=>{const S=L[+x.dataset.g].S;GPS.target={n:S.n,x:S.rx,z:S.rz};GPS.t=0;closeSheet();toast("🧭 اتبع السهم إلى "+S.n,2200)}))}
+{const _xa=xAction;xAction=function(sp){const a=_xa(sp);if(a||BOAT.on||sp>1.2)return a;const q=qPos();for(const S of FOOD)if(S.x!=null&&Math.hypot(q.x-S.dx,q.z-S.dz)<(WALK.on?8:17))return{k:"food",S,t:`${FOODK[S.k].ic} اطلب من ${S.n.split(" — ")[0]}`};return null};
+ const _xd=xDo;xDo=function(a){if(a&&a.k==="food"){foodSheet(a.S);return}_xd(a)}}
+
+/* ---- 2. بنك عدن: حوّل فلوس لصاحبك في الغرفة ---- */
+const myNetId=()=>{try{return net&&net.myId&&net.myId()}catch(e){return null}};
+function bankSheet(){const ids=Object.keys(remotes);const can=!!myNetId();
+  openSheet("🏦 بنك عدن",`<p class="fine">رصيدك: 💰 ${fmt(SAVE.cash)} ريال</p>${!ids.length?`<p class="fine">ما فيه أحد معك في الغرفة. لما يدخل صاحبك بنفس رمز الغرفة تقدر تحوّل له.</p>`:!can?`<p class="fine">التحويل يحتاج الاتصال المباشر بالغرفة — جرّب تدخل الغرفة من جديد.</p>`:
+   `<div class="row"><input id="bkAmt" inputmode="numeric" maxlength="6" placeholder="المبلغ" value="1000"></div><div class="list">${ids.map(id=>`<div class="card"><div><b>👤 ${esc(remotes[id].n||"لاعب")}</b></div><button class="pri" data-to="${id}">حوّل له</button></div>`).join("")}</div><p class="fine">أقصى تحويل ٥٠٬٠٠٠ ريال في المرة.</p>`}`,
+  b=>b.querySelectorAll("[data-to]").forEach(x=>x.onclick=()=>{const raw=String(b.querySelector("#bkAmt").value||"").replace(/[٠-٩]/g,d=>d.charCodeAt(0)-1632).replace(/[^0-9]/g,"");const a=Math.min(50000,Math.floor(+raw||0));
+    if(a<50){toast("أقل تحويل ٥٠ ريال",1500);return}if(SAVE.cash<a){toast("رصيدك ما يكفي",1500);return}const id=x.dataset.to;if(!remotes[id]){toast("صاحبك طلع من الغرفة",1500);return}
+    addCash(-a);SAVE.sent=(SAVE.sent||0)+1;saveNow();try{net.ev({k:"pay",to:id,a,n:myName})}catch(e){}coin();closeSheet();toast(`🏦 حوّلت ${fmt(a)} ريال إلى ${esc(remotes[id].n||"صاحبك")}`,3000)}))}
+
+/* ---- 3. كنز جماعي ---- */
+const TRE={on:false,x:0,z:0,n:"",m:null,el:xel("div","xtre",""),spots:null,t:0};TRE.el.hidden=true;
+{const G=new THREE.Group(),lm=c=>new THREE.MeshLambertMaterial({color:c});const b=new THREE.Mesh(new THREE.BoxGeometry(1.7,1,1.1),lm("#7a4a1e"));b.position.y=.5;G.add(b);const l=new THREE.Mesh(new THREE.BoxGeometry(1.8,.4,1.2),lm("#e0b23a"));l.position.y=1.15;G.add(l);
+ const k=new THREE.Mesh(new THREE.BoxGeometry(.3,.4,.1),lm("#ffe27a"));k.position.set(0,.75,.58);G.add(k);const gl=new THREE.Mesh(new THREE.CylinderGeometry(.5,1.6,9,10,1,true),new THREE.MeshBasicMaterial({color:"#ffd36b",transparent:true,opacity:.28,side:THREE.DoubleSide,depthWrite:false}));gl.position.y=5.5;G.add(gl);G.visible=false;scene.add(G);TRE.m=G}
+function treSpots(){if(TRE.spots)return TRE.spots;TRE.spots=[];for(const d of DEST){const p=plotNear(d.x,d.z,2.2,9);if(p)TRE.spots.push({x:Math.round(p.x),z:Math.round(p.z),n:d.n})}return TRE.spots}
+const trePrize=()=>hasFriend()?4000:1500;
+function treSet(x,z,n,by){TRE.on=true;TRE.x=x;TRE.z=z;TRE.n=n;TRE.m.position.set(x,groundAt(x,z),z);TRE.m.visible=false;TRE.el.hidden=false;bigMsg(`🗝️ كنز مخفي!<small>${by?esc(by)+" خبّى كنز":"فيه كنز"} قرب «${n}» — أول من يوصله يفوز</small>`,3600)}
+function treEnd(){TRE.on=false;TRE.m.visible=false;TRE.el.hidden=true}
+function treStart(){const L=treSpots();if(!L.length){toast("ما لقيت مكان للكنز",1500);return}const q=qPos();const far=L.filter(s=>Math.hypot(s.x-q.x,s.z-q.z)>350);const s=pick(far.length?far:L);treSet(s.x,s.z,s.n,"");if(net&&hasFriend())try{net.ev({k:"tre",a:"new",x:s.x,z:s.z,n:s.n,by:myName})}catch(e){}}
+function treSheet(){openSheet("🗝️ الكنز المخفي",`<p class="fine">صندوق كنز يتخبّى في مكان في عدن. تابع المؤشر (بارد ← دافئ ← ساخن) وأول من يوصل الصندوق ياخذ الجائزة: ${fmt(trePrize())} ريال${hasFriend()?" — كل اللي في الغرفة يتسابقون عليه":" (مع أصحابك في الغرفة الجائزة ٤٬٠٠٠)"}.</p>
+  <div class="row">${TRE.on?`<button class="warn" id="trX">⏹ ألغِ البحث</button>`:`<button class="pri" id="trGo">🗝️ خبّي كنز جديد</button>`}</div><p class="fine">🏆 لقيت ${fmt(SAVE.tre||0)} كنز</p>`,
+  b=>{const g=b.querySelector("#trGo");if(g)g.onclick=()=>{closeSheet();treStart()};const x=b.querySelector("#trX");if(x)x.onclick=()=>{closeSheet();treEnd();if(net&&hasFriend())try{net.ev({k:"tre",a:"off"})}catch(e){}toast("ألغيت البحث عن الكنز",1500)}})}
+function stepTre(dt){if(!TRE.on)return;const q=qPos(),d=Math.hypot(q.x-TRE.x,q.z-TRE.z);TRE.m.visible=d<110;TRE.m.rotation.y+=dt*.8;
+  TRE.t-=dt;if(TRE.t<=0){TRE.t=.4;TRE.el.textContent=`🗝️ قرب «${TRE.n}» · ${d>700?"🧊 بعيد مرة":d>380?"❄️ بارد":d>180?"🌤️ دافئ":d>70?"🔥 ساخن":"🔥🔥 قدّامك! دوّر على الضوء"}`}
+  if(d<6&&!BOAT.on){const pz=trePrize();treEnd();addCash(pz);addPts(60);SAVE.tre=(SAVE.tre||0)+1;saveNow();coin();try{fireworks(TRE.x,TRE.z)}catch(e){}bigMsg(`🏆 لقيت الكنز!<small>+${fmt(pz)} ريال</small>`,3200);if(net&&hasFriend())try{net.ev({k:"tre",a:"won",n:myName})}catch(e){}}}
+
+/* events from other players: money transfer + treasure */
+{const _oe=onEvent;onEvent=function(from,e){if(e&&e.k==="pay"){if(e.to&&e.to===myNetId()){const a=Math.max(0,Math.min(50000,Math.floor(+e.a||0)));if(a>0){addCash(a);coin();bigMsg(`🏦 وصلك تحويل!<small>${esc(e.n||"صاحبك")} حوّل لك ${fmt(a)} ريال</small>`,3600)}}return}
+  if(e&&e.k==="tre"){if(e.a==="new"&&isFinite(+e.x)&&isFinite(+e.z))treSet(+e.x,+e.z,esc(e.n||"عدن"),e.by||"صاحبك");else if(e.a==="won"){if(TRE.on){treEnd();toast(`🏆 ${esc(e.n||"صاحبك")} لقى الكنز قبلك!`,3200)}}else if(e.a==="off"){if(TRE.on){treEnd();toast("⏹ انلغى البحث عن الكنز",1800)}}return}
+  _oe(from,e)}}
+
+/* ---- 4. إنجازات ---- */
+const ACH=[
+ ["trips10","🚕","وصّلت ١٠ ركاب",()=>(SAVE.trips||0)>=10,1000],["deliv10","🛵","وصّلت ١٠ طلبات",()=>(SAVE.deliv||0)>=10,1000],["jobs5","💼","خلّصت ٥ وظايف",()=>(SAVE.jobs||0)>=5,1500],
+ ["wed1","💍","أول زفة",()=>(SAVE.wed||0)>=1,1000],["fish10","🐟","صيّاد صيرة — ١٠ سمكات",()=>(SAVE.fish||0)>=10,1500],["lm5","🏛️","زرت ٥ معالم",()=>(SAVE.lm||[]).length>=5,1000],
+ ["lmAll","🗺️","زرت كل معالم عدن",()=>(SAVE.lm||[]).length>=LM.length,5000],["cars3","🚗","عندك ٣ سيارات",()=>(SAVE.owned||[]).length>=3,2000],["drift","🔥","ملك التفحيط — ١٥٠٠ نقطة",()=>(SAVE.drb||0)>=1500,1500],
+ ["race","🏁","كمّلت أول سباق",()=>!!(SAVE.best||SAVE.bestB||SAVE.bestD),800],["parks5","🅿️","ركنت ٥ مرات صح",()=>(SAVE.parks||0)>=5,800],["meals5","😋","ذوّاق عدن — ٥ وجبات",()=>(SAVE.meals||0)>=5,800],
+ ["tre1","🗝️","صيّاد الكنوز",()=>(SAVE.tre||0)>=1,1500],["gen","🤝","كريم — حوّلت فلوس لصاحبك",()=>(SAVE.sent||0)>=1,500],["pro","🏅","وصلت ٢٠٠٠ نقطة",()=>(SAVE.pts||0)>=2000,2000]];
+let achT=6;
+function stepAch(dt){achT-=dt;if(achT>0)return;achT=4;if(uiLock||RC.on)return;if(!SAVE.ach)SAVE.ach=[];for(const a of ACH){if(SAVE.ach.includes(a[0]))continue;let ok=false;try{ok=a[3]()}catch(e){}if(!ok)continue;
+  SAVE.ach.push(a[0]);addCash(a[4]);coin();toast(`🏅 إنجاز: ${a[1]} ${a[2]} — مكافأة ${fmt(a[4])} ريال`,3800);return}}
+function achSheet(){const got=SAVE.ach||[];openSheet(`🏅 الإنجازات · ${fmt(got.length)} من ${fmt(ACH.length)}`,`<div class="list">${ACH.map(a=>{const ok=got.includes(a[0]);return`<div class="card" style="${ok?"":"opacity:.6"}"><div><b>${a[1]} ${a[2]}</b><br><span>مكافأة ${fmt(a[4])} ريال</span></div><b>${ok?"✅":"🔒"}</b></div>`}).join("")}</div>`)}
+
+/* ---- 5. لوحة يمنية باسمك ---- */
+function drawPlate(){try{const c=plateTex.image,g=c.getContext("2d"),w=c.width,h=c.height,t=SAVE.plate||"عدن ١٢٣٤";g.fillStyle="#f4f4f0";g.fillRect(0,0,w,h);g.strokeStyle="#222";g.lineWidth=3;g.strokeRect(2,2,w-4,h-4);g.fillStyle="#1a1a1a";let fs=24;g.font=`700 ${fs}px Tajawal, sans-serif`;while(fs>12&&g.measureText(t).width>w-14){fs-=2;g.font=`700 ${fs}px Tajawal, sans-serif`}g.textAlign="center";g.textBaseline="middle";g.fillText(t,w/2,h/2+1);plateTex.needsUpdate=true}catch(e){}}
+if(SAVE.plate)drawPlate();
+function plateSheet(){openSheet("🔢 لوحة سيارتي",`<p class="fine">اكتب اسمك أو رقمك المميز ويظهر على لوحة سيارتك (١٢ حرف).</p><div class="row"><input id="plIn" maxlength="12" value="${esc(SAVE.plate||"عدن ١٢٣٤")}" placeholder="مثلاً: عدن ٧٧٧"><button class="pri" id="plOk">تركيب · ٢٠٠ ريال</button></div>`,
+  b=>b.querySelector("#plOk").onclick=()=>{const v=esc(b.querySelector("#plIn").value.trim()).slice(0,12);if(!v){toast("اكتب اللوحة أول",1300);return}if(SAVE.cash<200){toast("ما معك ٢٠٠ ريال",1500);return}addCash(-200);SAVE.plate=v;saveNow();drawPlate();coin();closeSheet();toast(`🔢 ركّبنا اللوحة «${v}»`,2400)})}
+
+/* ---- 6. صدى الأنفاق ---- */
+let ECH=null;
+function stepEcho(){if(!AC||!OUT)return;if(!ECH){try{const d=AC.createDelay(.5);d.delayTime.value=.13;const fb=AC.createGain();fb.gain.value=.4;const wet=AC.createGain();wet.gain.value=0;OUT.connect(wet);wet.connect(d);d.connect(fb);fb.connect(d);d.connect(AC.destination);ECH={wet,on:false}}catch(e){ECH={wet:null,on:false}}}
+  if(!ECH.wet)return;const q=qPos();const inT=(q.x>-69&&q.x<-51&&q.z>326&&q.z<374)||(q.x>-802&&q.x<-758&&q.z>-709&&q.z<-691);if(inT!==ECH.on){ECH.on=inT;ECH.wet.gain.setTargetAtTime(inT?.6:0,AC.currentTime,.12)}}
+
+/* ---- 7. أجواء العيدين ---- */
+OPT.eid=OPT.eid||"auto";
+const EID_DAYS=[["2027-03-10","2027-03-13","الفطر"],["2027-05-16","2027-05-20","الأضحى"],["2028-02-27","2028-03-01","الفطر"],["2028-05-05","2028-05-09","الأضحى"],["2029-02-15","2029-02-18","الفطر"],["2029-04-24","2029-04-28","الأضحى"]];
+const eidNow=()=>{const d=_dd();const r=EID_DAYS.find(([a,b])=>d>=a&&d<=b);return OPT.eid==="on"?(r?"عيد "+r[2]:"عيد سعيد"):OPT.eid==="auto"&&r?"عيد "+r[2]:null};
+const EID={hi:false,fw:20};
+function stepEid(dt){const e=eidNow();if(!e){EID.hi=false;return}if(!EID.hi&&!uiLock){EID.hi=true;setTimeout(()=>bigMsg(`🎉 عيدكم مبارك!<small>${e} — كل عام وأنتم بخير يا أهل عدن</small>`,4200),1500);
+    if(SAVE.eidD!==_dd()){SAVE.eidD=_dd();setTimeout(()=>{addCash(1000);coin();toast("🎁 عيدية العيد: +١٬٠٠٠ ريال",3400)},6200)}}
+  EID.fw-=dt;if(EID.fw<=0){EID.fw=rr(35,60);const q=qPos(),a=Math.random()*6.28;try{fireworks(q.x+Math.sin(a)*45,q.z+Math.cos(a)*45)}catch(x){}}}
+{const _es=eventsSheet;eventsSheet=function(){_es();const b=$("shBody");const d=document.createElement("div");d.innerHTML=`<p class="fine">🎉 أجواء العيد — تهنئة وألعاب نارية وعيدية كل يوم. «تلقائي» يشتغل في أيام عيد الفطر والأضحى.</p><div class="seg">${[["auto","تلقائي"],["on","شغّال"],["off","مطفي"]].map(([v,n])=>`<button type="button" data-eid="${v}" class="${OPT.eid===v?"pri":""}">${n}</button>`).join("")}</div>`;
+  b.insertBefore(d,b.querySelector(".row"));d.querySelectorAll("[data-eid]").forEach(x=>x.onclick=()=>{OPT.eid=x.dataset.eid;EID.hi=false;saveNow();eventsSheet()})}}
+
+/* ---- phone apps + main step ---- */
+APPS.push(["food","🍽️","مطاعم ومقاهي","#b23a2e"],["bank","🏦","بنك عدن","#0f766e"],["tre","🗝️","الكنز","#a16207"],["ach","🏅","الإنجازات","#7c3aed"],["plate","🔢","لوحتي","#374151"]);
+{const _s3=stepX3;stepX3=function(dt,fwd){_s3(dt,fwd);try{if(!playing)return;stepTre(dt);stepAch(dt);stepEcho();stepEid(dt)}catch(e){}}}
+
 /* ---------- 16. first-time tutorial ---------- */
 const TUT={on:false,i:0,acc:0,el:xel("div","xtut",""),ring:xel("div","xring","")};TUT.el.hidden=TUT.ring.hidden=true;
 const TSTEPS=[
@@ -3598,6 +3776,57 @@ function stepX3(dt,fwd){try{stepHaj();stepBoat(dt);stepRamadan(dt);stepMatch(dt)
 Object.assign(X3,{JOB,startJob,stopJob,WZ,wedZaffa,HJ,DCH,dailySheet,RAM,ramOn,iftarCannon,NEWS,newsItems,BUFF,eat,MT,matchOn,TUNE,tuneSheet,CL,clothesSheet,rebuildWalker,BOAT,boardBoat,leaveBoat,isWater,DOCKS,DRC,startDrift,PHO,photoMode,PHN,openPhone,ringCall,LB,lbSheet,saveCode,loadCode,saveSheet,eventsSheet,TUT,startTut,WSH,startWorkshop,xAction,OPT,jobsSheet});
 
 FT.push({n:"ورشة الشيخ عثمان",x:WS.x,z:WS.z-18,r:0},{n:"ساحة التفحيط",x:(DPZ.x0+DPZ.x1)/2,z:DPZ.z0-8,r:0},{n:"مرسى صيرة ⛵",x:180,z:447,r:Math.PI},{n:"مرسى جولدمور ⛵",x:-1040,z:-722,r:0});
+/* Coastal realism pack: bounded geometry, no additional downloads. */
+const REAL={t:0,signal:0,car:null,lamps:[],clouds:[],birds:[],lounges:[],scan:0,distance:Infinity};
+document.head.insertAdjacentHTML('beforeend',`<style>
+#realTools{position:absolute;right:12px;top:calc(108px + env(safe-area-inset-top,0px));display:flex;gap:5px;pointer-events:auto}#realTools[hidden]{display:none}#realTools button{background:#102c38dd;color:#f4e5c4;border:1px solid #a6baa455;border-radius:10px;min-width:39px;height:36px;font-size:18px}#realTools button.active{background:#b66c17;color:white}#realInfo{position:absolute;left:50%;transform:translateX(-50%);bottom:8px;background:#10232bd9;color:#e7efed;padding:5px 12px;border-radius:20px;font:12px sans-serif;white-space:nowrap;pointer-events:none}#realGlass{position:fixed;inset:0;pointer-events:none;z-index:3}#realGlass[hidden]{display:none}#realGlass i{position:absolute;width:3px;height:15px;background:linear-gradient(transparent,#d9edfa88);border-radius:100%;animation:realRain 1.1s linear infinite}#realGlass b{position:absolute;bottom:-2%;left:23%;width:44%;height:5px;background:#171d22;box-shadow:0 1px 1px #888;transform-origin:0 50%;animation:realWipe 1.3s ease-in-out infinite alternate}#realGlass b:last-child{left:55%;width:38%}@keyframes realRain{to{translate:8px 80px;opacity:0}}@keyframes realWipe{from{transform:rotate(-12deg)}to{transform:rotate(-145deg)}}@media(max-width:640px){#realTools{top:calc(195px + env(safe-area-inset-top,0px));right:6px}#realTools button{min-width:32px;height:32px}#realInfo{font-size:10px;bottom:3px}}
+</style>`);
+const realTools=document.createElement('div');realTools.id='realTools';realTools.innerHTML='<button title="غماز يسار" aria-label="غماز يسار" data-s="-1">◀</button><button title="فلشر" aria-label="فلشر" data-s="2">⚠</button><button title="غماز يمين" aria-label="غماز يمين" data-s="1">▶</button>';$('hud').appendChild(realTools);
+const realInfo=document.createElement('div');realInfo.id='realInfo';$('hud').appendChild(realInfo);
+function realSignal(s){REAL.signal=REAL.signal===s?0:s;for(const b of realTools.children){b.classList.toggle('active',+b.dataset.s===REAL.signal);b.setAttribute('aria-pressed',String(+b.dataset.s===REAL.signal))}}
+for(const b of realTools.children)b.onclick=()=>realSignal(+b.dataset.s);
+const realGlass=document.createElement('div');realGlass.id='realGlass';realGlass.hidden=true;for(let i=0;i<28;i++){const d=document.createElement('i');d.style.cssText=`left:${(i*37)%100}%;top:${(i*23)%90}%;animation-delay:-${i*.13}s`;realGlass.appendChild(d)}realGlass.insertAdjacentHTML('beforeend','<b></b><b></b>');document.body.appendChild(realGlass);
+// Soft cloud sprites share a single procedural texture.
+const cloudTex=canvasTex(256,128,(g,w,h)=>{for(let i=0;i<7;i++){const x=36+i*29,y=65+Math.sin(i*2)*15,r=28;const gr=g.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,'rgba(255,255,255,.8)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(x-r,y-r,r*2,r*2)}},false);
+for(let i=0;i<10;i++){const m=new THREE.Sprite(new THREE.SpriteMaterial({map:cloudTex,transparent:true,opacity:.7,depthWrite:false,fog:false}));m.scale.set(170+i%3*40,70,1);scene.add(m);REAL.clouds.push(m)}
+const moon=new THREE.Mesh(new THREE.SphereGeometry(8,12,8),new THREE.MeshBasicMaterial({color:'#fff0ce',fog:false}));scene.add(moon);
+const birdMat=new THREE.LineBasicMaterial({color:'#eae8dc'});
+for(let i=0;i<12;i++){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute([-1.8,0,0,-.55,.3,0,0,0,0,.55,.3,0,1.8,0,0],3));const b=new THREE.Line(g,birdMat);scene.add(b);REAL.birds.push(b)}
+// Small pergolas on the existing seafront promenade, away from traffic lanes.
+const wood=new THREE.MeshLambertMaterial({color:'#875b3e'}),cloth=new THREE.MeshLambertMaterial({color:'#e6d5ac',side:THREE.DoubleSide}),warm=new THREE.MeshBasicMaterial({color:'#ffe1a0'});
+for(const z of[-180,-100,100,260]){const g=new THREE.Group();g.position.set(207,groundY(207,z),z);const part=(w,h,d,x,y,zz,m)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,zz);g.add(o)};
+for(const x of[-2.5,2.5])for(const zz of[-2.5,2.5])part(.15,3.2,.15,x,1.6,zz,wood);
+part(5.6,.15,5.6,0,3.2,0,cloth);part(1,.15,4,-1.9,.65,0,wood);part(.15,1,4,-2.4,1,0,wood);part(1.4,.12,1.4,0,.9,0,wood);part(.2,.9,.2,0,.45,0,wood);
+for(let j=0;j<5;j++)part(.12,.16,.12,-2+j,2.9,2.5,warm);
+const pool=new THREE.Mesh(new THREE.PlaneGeometry(7,7).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({map:T.pool,transparent:true,depthWrite:false,opacity:0}));pool.position.y=.06;g.add(pool);g.userData.pool=pool;scene.add(g);REAL.lounges.push(g);addBox(204.4,205.6,z-2.2,z+2.2);addBox(206.2,207.8,z-.8,z+.8)}
+function stepRealism(dt){REAL.t+=dt;const t=REAL.t,n=Math.max(0,TOD.n),lite=SAVE.q==='low';
+REAL.clouds.forEach((m,i)=>{m.visible=!lite||i<4;const a=i*2.399+t*.003;m.position.set(camera.position.x+Math.cos(a)*480,140+(i%3)*35,camera.position.z+Math.sin(a)*480);m.material.opacity=(.7-n*.55)*(1-WX.kd*.75);m.material.color.set(n>.5?'#8292af':'#ffffff')});
+moon.visible=n>.3;moon.position.set(camera.position.x-320,220,camera.position.z-390);
+REAL.birds.forEach((b,i)=>{b.visible=(!lite||i<4)&&n<.7&&WX.kr<.4;const a=t*.12+i*.7;b.position.set(245+Math.cos(a)*45,17+i%4*3+Math.sin(t+i),90+Math.sin(a)*85);b.rotation.y=-a;const p=b.geometry.attributes.position;p.setY(0,Math.sin(t*5+i)*.7);p.setY(4,Math.sin(t*5+i)*.7);p.needsUpdate=true});
+for(const g of REAL.lounges){g.visible=Math.hypot(g.position.x-camera.position.x,g.position.z-camera.position.z)<(lite?180:450);g.userData.pool.material.opacity=n*.7}
+if(car!==REAL.car){REAL.car=car;REAL.lamps=[];// Vehicle-local indicator lights.
+const len=car.userData.type==='bus'?5:2;for(const side of[-1,1])for(const end of[-1,1]){const m=new THREE.Mesh(new THREE.BoxGeometry(.22,.16,.13),new THREE.MeshBasicMaterial({color:'#ffad24'}));m.position.set(side*.82,.72,end*len);car.add(m);REAL.lamps.push({m,side})}}
+const blink=(t% .8)<.4;for(const l of REAL.lamps)l.m.visible=playing&&!WALK.on&&blink&&(REAL.signal===2||REAL.signal===l.side);
+realTools.hidden=WALK.on;realGlass.hidden=!(playing&&!WALK.on&&camMode===1&&WX.kr>.18);
+REAL.scan+=dt;if(REAL.scan<.15)return;REAL.scan=0;let nearest=Infinity;
+if(playing&&!WALK.on&&P.gear==='R'&&elevAt(P.x,P.z)===null){const rx=P.x-Math.sin(P.r)*2.6,rz=P.z-Math.cos(P.r)*2.6;for(const b of boxes){const x=Math.max(b.x0,Math.min(rx,b.x1)),z=Math.max(b.z0,Math.min(rz,b.z1));if((x-P.x)*Math.sin(P.r)+(z-P.z)*Math.cos(P.r)<0)nearest=Math.min(nearest,Math.hypot(x-rx,z-rz))}for(const v of traffic)if(!v.off&&(v.x-P.x)*Math.sin(P.r)+(v.z-P.z)*Math.cos(P.r)<0)nearest=Math.min(nearest,Math.max(0,Math.hypot(v.x-rx,v.z-rz)-2))}
+REAL.distance=nearest;const minutes=Math.floor(TOD.t*1440),clock=String(Math.floor(minutes/60)%24).padStart(2,'0')+':'+String(minutes%60).padStart(2,'0');const weather=WX.kr>.2?'🌧 مطر':WX.kd>.2?'🌫 غبار':'☀ صحو';
+realInfo.textContent=nearest<6?'🅿 حساس خلفي: '+(nearest<.7?'توقف — قريب جدًا':nearest.toFixed(1)+' م'):'◷ '+clock+' · '+weather+' · '+(WALK.on?'جولة على الأقدام':'شوارع عدن');realInfo.style.color=nearest<1.5?'#ff9a86':'#e7efed';
+}
+
+
+/* Lightweight living-city pack: texture details, load and contract mechanics. */
+function missionLoad(){if(typeof MS==='undefined'||MS.state!=='drop')return 0;return MS.mode==='delivery'?.09:MS.mode==='wedding'?.08:.05}
+function contractText(k){return {fragile:'📦 قابل للكسر: بلا صدمات · مكافأة 20٪',urgent:'⏱ مستعجل: قبل انتهاء الوقت · مكافأة 15٪',smooth:'☕ قيادة هادئة: دون صدمات، أقل من 70 كم/س وبدون لفات حادة · مكافأة 20٪',clean:'✨ مشوار بلا صدمات · مكافأة 10٪'}[k]||''}
+function contractBonus(m,left,pay){const clean=m.crashes===0;const ok=m.contract==='urgent'?left>0:m.contract==='smooth'?clean&&m.rough<.5:clean;const rate={urgent:.15,smooth:.2,fragile:.2,clean:.1}[m.contract]||0;return ok?Math.round(pay*rate/50)*50:0}
+const LIFE={time:0,light:0,beep:0,tick:-1};
+function cabinTone(hz,duration,volume){if(!AC||!OUT||AC.state!=='running'||document.hidden||CTL.mute||!playing)return;const t=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type='sine';o.frequency.value=hz;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(volume,t+.006);g.gain.exponentialRampToValueAtTime(.0001,t+duration);o.connect(g);g.connect(OUT);o.onended=()=>{o.disconnect();g.disconnect()};o.start(t);o.stop(t+duration+.01)}
+function stepLife(dt){LIFE.time+=dt;LIFE.light+=dt;
+if(LIFE.light>1){LIFE.light=0;for(let i=0;i<5;i++){const mat=sideMats['fac'+i];if(mat)mat.emissiveIntensity=Math.max(0,TOD.n)*(.45+.12*Math.sin(LIFE.time*.025+i*1.7))}}
+const tick=Math.floor(REAL.t/.4);if(playing&&!WALK.on&&!uiLock&&REAL.signal&&tick!==LIFE.tick)cabinTone(tick%2?670:920,.045,.024);LIFE.tick=tick;
+LIFE.beep-=dt;if(playing&&!WALK.on&&!uiLock&&P.gear==='R'&&REAL.distance<6&&LIFE.beep<=0){cabinTone(REAL.distance<1?1250:950,.09,.035);LIFE.beep=Math.max(.14,Math.min(.9,REAL.distance*.15))}
+}
+
 function frame(now){requestAnimationFrame(frame);let dt=Math.min(.05,(now-last)/1000);last=now;seaT+=dt;
   T.sea.offset.set(seaT*.004,seaT*.01);
   // traffic
@@ -3650,7 +3879,7 @@ function frame(now){requestAnimationFrame(frame);let dt=Math.min(.05,(now-last)/
   stepConvoys(dt);
   stepTOD(dt);stepWeather(dt);stepShips(dt);stepFount();stepWaves();if(playing){stepAban();stepPray(dt);stepEid(dt);stepLandmarks(dt)}stepBeam();if(playing)stepCity(dt);if(playing)stepSfx(fwd);
   if(playing){stepJoinWed();stepFill(dt,fwd);stepRadar(dt,fwd);stepPolice(dt,fwd);stepMission(dt,fwd);stepPark(dt,fwd);stepGPS(dt);stepGood(dt,fwd);stepRace(dt);stepChase(dt);stepAmb(dt);stepPerf(dt);stT+=dt;if(stT>.2){stT=0;stepStations(Math.abs(fwd))}}
-  stepX3(dt,fwd);
+  stepX3(dt,fwd);try{stepRealism(dt);stepLife(dt)}catch(e){}
   SKYDOME.position.set(camera.position.x,0,camera.position.z);renderer.render(scene,camera);if(firstFrame){firstFrame=false;setTimeout(()=>{$("loading").hidden=true},Math.max(250,2800-performance.now()))}}
 applyQuality();setCash();requestAnimationFrame(frame);
 addEventListener("pagehide",()=>{try{net&&net.leave()}catch(e){}});
