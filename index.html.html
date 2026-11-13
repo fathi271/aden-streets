@@ -2378,6 +2378,7 @@ function renderPlayers(){const el=$("plist");const ids=Object.keys(remotes);el.h
 
 /* ================= networking ================= */
 let myName="لاعب",myCode="عدن",hornCount=0,net=null;
+try{$("net").style.pointerEvents="auto";$("net").style.cursor="pointer";$("net").addEventListener("click",()=>{try{if(net&&net.diag)net.diag();else toast("الأونلاين لسه ما اشتغل",1500)}catch(e){}})}catch(e){}
 function setNet(state,txt){const dot=$("net").querySelector(".dot");dot.style.background=state==="ok"?"#3dd68c":state==="warn"?"#f2c230":state==="err"?"#e5484d":"#b8c4c9";$("netTxt").textContent=txt}
 let stSeq=0;function myState(){return{q:++stSeq,tm:Math.round(performance.now()),vx:+P.vx.toFixed(1),vz:+P.vz.toFixed(1),g:myCode,n:myName,c:myColor,k:SAVE.car,rm:SAVE.rim,x:+P.x.toFixed(1),z:+P.z.toFixed(1),r:+P.r.toFixed(2),s:Math.round(Math.hypot(P.vx,P.vz)*3.6),h:hornCount,cop:CH.on&&CH.cop?1:0,sm:P.hp<.4?1:0,wd:MS.mode==="wedding"&&MS.state==="drop"?1:0,jw:JW.on?1:0,w:WALK.on&&!WALK.inside?1:0,md:SAVE.mods,wx:+WALK.x.toFixed(1),wz:+WALK.z.toFixed(1),wr:+WALK.r.toFixed(2)}}
 
@@ -2406,7 +2407,19 @@ async function netPeer(){
   let peer=null,isHost=false,migrating=false;const conns=new Map(),calls=new Map(),audios=new Map();let mic=null;
   const PCFG={debug:0,config:{iceServers:[{urls:["stun:stun.l.google.com:19302","stun:stun1.l.google.com:19302","stun:stun.cloudflare.com:3478"]},{urls:["turn:eu-0.turn.peerjs.com:3478","turn:us-0.turn.peerjs.com:3478"],username:"peerjs",credential:"peerjsp"},{urls:["turn:openrelay.metered.ca:80","turn:openrelay.metered.ca:443","turn:openrelay.metered.ca:443?transport=tcp"],username:"openrelayproject",credential:"openrelayproject"}],sdpSemantics:"unified-plan"}};
   let joinT=0,rejoinN=0;
-  function rejoin(why){if(migrating)return;migrating=true;clearTimeout(joinT);setNet("warn",why||"إعادة الاتصال بالغرفة…");calls.forEach(c=>{try{c.close()}catch(e){}});calls.clear();try{peer.destroy()}catch(e){}conns.clear();rejoinN++;setTimeout(()=>{migrating=false;startHost()},500+Math.random()*1500+Math.min(6000,rejoinN*700))}
+  /* network check: which kinds of ICE candidates can this phone get? (direct / STUN / TURN relay) */
+  let diagRes=null,diagShown=0;
+  function netDiag(){return new Promise(res=>{const r={host:0,srflx:0,relay:0,err:""};let pc;try{pc=new RTCPeerConnection(PCFG.config)}catch(e){r.err="لا يدعم WebRTC";res(r);return}
+    let fin=false;const end=()=>{if(fin)return;fin=true;try{pc.close()}catch(e){}diagRes=r;res(r)};
+    pc.onicecandidate=e=>{if(!e.candidate){end();return}const m=/ typ (\w+)/.exec(e.candidate.candidate||"");if(m&&r[m[1]]!==undefined)r[m[1]]++};
+    try{pc.createDataChannel("t");pc.createOffer().then(o=>pc.setLocalDescription(o)).catch(()=>end())}catch(e){end()}setTimeout(end,6000)})}
+  function diagText(r){const ok=v=>v?"✅":"❌";return `<div class="list"><div class="card"><div><b>خادم الغرف</b><br><span>${peer&&peer.open&&!peer.disconnected?"متصل":"غير متصل"}</span></div><b>${ok(peer&&peer.open&&!peer.disconnected)}</b></div>
+    <div class="card"><div><b>اتصال مباشر بين الجوالات</b><br><span>يشتغل لما تكونون على نفس الواي فاي أو شبكة مفتوحة</span></div><b>${ok(r.srflx)}</b></div>
+    <div class="card"><div><b>خادم وسيط (للشبكات المقفلة)</b><br><span>لازم لما يكون جوال على بيانات الجوال وجوال على واي فاي</span></div><b>${ok(r.relay)}</b></div></div>
+    <p class="fine">${r.relay?"شبكتك تمام. لو ما ربط، خلّوا صاحب الغرفة يطلع ويدخل من جديد ثم ادخلوا بعده.":r.srflx?"⚠️ الخادم الوسيط ما اشتغل على شبكتك. الربط ينجح بس لو شبكة صاحبك مفتوحة. جرّب: بدّل بين الواي فاي وبيانات الجوال، أو ادخل أنت أول واحد (كن المضيف).":"⚠️ شبكتك تمنع اتصال الألعاب. بدّل الشبكة (واي فاي ↔ بيانات الجوال) وجرّب مرة ثانية."}</p>
+    <p class="fine">أرسل صورة هذي الصفحة لفتحي لو استمرت المشكلة · ${r.host}/${r.srflx}/${r.relay}</p>`}
+  async function showDiag(force){if(!force&&(diagShown||uiLock))return;diagShown=1;const r=await netDiag();if(!force&&uiLock)return;try{openSheet("📶 فحص الاتصال",diagText(r))}catch(e){}}
+  function rejoin(why){if(migrating)return;migrating=true;if(rejoinN>=2)setTimeout(()=>showDiag(false),1500);clearTimeout(joinT);setNet("warn",why||"إعادة الاتصال بالغرفة…");calls.forEach(c=>{try{c.close()}catch(e){}});calls.clear();try{peer.destroy()}catch(e){}conns.clear();rejoinN++;setTimeout(()=>{migrating=false;startHost()},500+Math.random()*1500+Math.min(6000,rejoinN*700))}
   function voiceOK(id){try{const c=calls.get(id);return !!(c&&c.peerConnection&&/connected|completed/.test(c.peerConnection.iceConnectionState))}catch(e){return false}}
   const status=()=>{const ids=Object.keys(remotes),n=ids.length;let v=0;for(const id of ids)if(voiceOK(id))v++;setNet("ok",(isHost?"أنت المضيف":"متصل بالمضيف")+(n?` · ${n+1} لاعبين · 🔊 ${v}/${n}`:` · غرفة «${myCode}» · بانتظار صاحبك`))};
   function setupConn(conn){
@@ -2464,7 +2477,7 @@ async function netPeer(){
   await startHost();
   setInterval(()=>{for(const id in remotes)if(performance.now()-remotes[id].seen>6000)removeRemote(id);if(peer&&!peer.destroyed&&!migrating&&peer.open)status()},2000);
   return{voice:true,
-    myId(){return peer&&peer.id},send(s){const d=Object.assign({id:peer&&peer.id},s);for(const c of conns.values())if(c.open)try{c.send(d)}catch(e){}},
+    myId(){return peer&&peer.id},diag(){showDiag(true)},send(s){const d=Object.assign({id:peer&&peer.id},s);for(const c of conns.values())if(c.open)try{c.send(d)}catch(e){}},
     ev(e){const d={id:peer&&peer.id,ev:e};for(const c of conns.values())if(c.open)try{c.send(d)}catch(_){}},
     async mic(on){if(on){if(!mic){mic=await openMic();howlWatch(mic._raw||mic);fixAudioAfterMic();redial()}else mic.getAudioTracks().forEach(t=>t.enabled=true)}
       else if(mic)mic.getAudioTracks().forEach(t=>t.enabled=false)},
