@@ -2405,7 +2405,7 @@ async function netPeer(){
   try{await loadScript("https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js")}catch(e){setNet("err","تعذر تحميل مكتبة الأونلاين");return null}
   const hostId="aden-streets-"+slug(myCode);
   let peer=null,isHost=false,migrating=false;const conns=new Map(),calls=new Map(),audios=new Map();let mic=null;
-  const PCFG={debug:0,config:{iceServers:[{urls:["stun:stun.l.google.com:19302","stun:stun1.l.google.com:19302","stun:stun.cloudflare.com:3478"]},{urls:["turn:eu-0.turn.peerjs.com:3478","turn:us-0.turn.peerjs.com:3478"],username:"peerjs",credential:"peerjsp"},{urls:["turn:openrelay.metered.ca:80","turn:openrelay.metered.ca:443","turn:openrelay.metered.ca:443?transport=tcp"],username:"openrelayproject",credential:"openrelayproject"}],sdpSemantics:"unified-plan"}};
+  const PCFG={debug:0,config:{iceServers:[{urls:["stun:stun.l.google.com:19302","stun:stun1.l.google.com:19302","stun:stun.cloudflare.com:3478"]},{urls:["turn:free.expressturn.com:3478","turn:free.expressturn.com:3478?transport=tcp"],username:"000000002109989884",credential:"IyBmillTzxMJ5/+O2vZdwzLQkH0="},{urls:["turn:eu-0.turn.peerjs.com:3478","turn:us-0.turn.peerjs.com:3478"],username:"peerjs",credential:"peerjsp"},{urls:["turn:openrelay.metered.ca:80","turn:openrelay.metered.ca:443","turn:openrelay.metered.ca:443?transport=tcp"],username:"openrelayproject",credential:"openrelayproject"}],sdpSemantics:"unified-plan"}};
   let joinT=0,rejoinN=0;
   /* network check: which kinds of ICE candidates can this phone get? (direct / STUN / TURN relay) */
   let diagRes=null,diagShown=0;
