@@ -203,7 +203,7 @@ button.chip.on{background:var(--sea);border-color:transparent;color:#04252a}
 #turnHint.on{opacity:1;transform:translateX(-50%) scale(1)}
 #turnHint.near{background:#e8743b}
 @media (max-width:640px){#turnHint{top:calc(206px + env(safe-area-inset-top,0px))}}
-body.photo #turnHint{display:none}
+#turnHint{display:none!important}
 </style>
 
 <div id="stage"></div>
@@ -378,7 +378,7 @@ const boxes=[];   // collision AABBs {x0,x1,z0,z1}
 const HILLS=[],PALMS=[];const circles=[]; // collision circles {x,z,r}
 const addBox=(x0,x1,z0,z1)=>boxes.push({x0,x1,z0,z1});
 const ELEV=[];
-function elevAt(x,z){for(const s of ELEV){if(x<s.minx||x>s.maxx||z<s.minz||z>s.maxz)continue;const dx=s.bx-s.ax,dz=s.bz-s.az;let t=((x-s.ax)*dx+(z-s.az)*dz)/s.L2;t=t<0?0:t>1?1:t;const px=s.ax+dx*t-x,pz=s.az+dz*t-z;if(px*px+pz*pz<=s.hw2)return s.ay+(s.by-s.ay)*t}return null}
+function elevAt(x,z){let best=null,bd=1e9;for(const s of ELEV){if(x<s.minx||x>s.maxx||z<s.minz||z>s.maxz)continue;const dx=s.bx-s.ax,dz=s.bz-s.az;let t=((x-s.ax)*dx+(z-s.az)*dz)/s.L2;t=t<0?0:t>1?1:t;const px=s.ax+dx*t-x,pz=s.az+dz*t-z,d2=px*px+pz*pz;if(d2<=s.hw2&&d2<bd){bd=d2;best=s.ay+(s.by-s.ay)*t}}return best}
 const RX=[-300,-180,-60,60,180], RZ=[-300,-180,-60,60,180,300];
 const RW=14, SEA_X=224;
 const ROUND=[{x:60,z:-60,r:14,kind:"boat"},{x:-60,z:60,r:12,kind:"tri"},{x:-180,z:-180,r:9,kind:"fount"},{x:-800,z:180,r:13,kind:"caltex"},{x:-300,z:180,r:18,kind:"bigfount"},{x:-60,z:430,r:7,kind:"plants"}];
@@ -1552,16 +1552,20 @@ function makeCar(color){return makeVehicle("sedan",color)}
 function setRimColor(v,c){v.userData.rimM.color.set(c);for(const w of v.userData.wheels)if(w.userData.capM)w.userData.capM.color.set(c)}
 // cockpit for the interior camera: dashboard, gauges and a steering wheel that turns
 function makeCockpit(v){const d=v.userData.drv;if(!d||v.userData.type==="moto")return null;const g=new THREE.Group();
-  const S=SHAPES[v.userData.type]||SHAPES.sedan,dm=new THREE.MeshLambertMaterial({color:"#1e2024"});const cw=S.cw-.08,wsZ=S.cab[3][0],floorY=S.cab[0][1]+.01;
-  const floor=new THREE.Mesh(new THREE.BoxGeometry(cw,.04,wsZ-S.cab[0][0]),new THREE.MeshLambertMaterial({color:"#2b2e33"}));floor.position.set(0,floorY,(wsZ+S.cab[0][0])/2);g.add(floor);
-  const dash=new THREE.Mesh(new THREE.BoxGeometry(cw,.34,.75),dm);dash.position.set(0,floorY+.17,wsZ-.42);g.add(dash);
-  for(const s2 of[-1,1]){const dp=new THREE.Mesh(new THREE.BoxGeometry(.05,.3,wsZ-S.cab[0][0]),dm);dp.position.set(s2*(cw/2),floorY+.15,(wsZ+S.cab[0][0])/2);g.add(dp)}
-  const gp=new THREE.Mesh(new THREE.PlaneGeometry(.5,.19),new THREE.MeshBasicMaterial({map:gaugeTex}));gp.position.set(d.x,floorY+.36,wsZ-.79);gp.rotation.x=-.35;g.add(gp);
-  const sw=new THREE.Group();const rimT=new THREE.Mesh(new THREE.TorusGeometry(.19,.025,8,24),new THREE.MeshLambertMaterial({color:"#121316"}));sw.add(rimT);
+  /* interior view: the outside body is hidden (layer 1) and the driver sees road + bonnet + dashboard + top of the steering wheel */
+  const S=SHAPES[v.userData.type]||SHAPES.sedan,dm=new THREE.MeshLambertMaterial({color:"#1e2024"});const cw=S.cw,wsZ=S.cab[3][0],by=S.cab[3][1],L=S.lower,fz=Math.max.apply(null,L.map(p=>p[0])),fy=L[L.length-3][1];
+  const hl=Math.max(.2,fz-wsZ),ang=Math.atan2(by-fy,hl)*.6;const hood=new THREE.Mesh(new THREE.BoxGeometry(S.W-.06,.05,hl+.1),v.userData.body);hood.position.set(0,by-.04-Math.sin(ang)*hl/2,wsZ+hl/2);hood.rotation.x=ang;g.add(hood);
+  const dash=new THREE.Mesh(new THREE.BoxGeometry(S.W,.3,.62),dm);dash.position.set(0,by-.17,wsZ-.3);g.add(dash);
+  const cowl=new THREE.Mesh(new THREE.BoxGeometry(.62,.1,.3),dm);cowl.position.set(d.x,by+.02,wsZ-.42);g.add(cowl);
+  const gp=new THREE.Mesh(new THREE.PlaneGeometry(.46,.17),new THREE.MeshBasicMaterial({map:gaugeTex}));gp.position.set(d.x,by-.03,wsZ-.6);gp.rotation.y=Math.PI;gp.rotation.x=.5;g.add(gp);
+  const tx=S.cab[2][0],ty=S.cab[2][1];for(const s2 of[-1,1]){const pl=Math.hypot(wsZ-tx,ty-by);const ap=new THREE.Mesh(new THREE.BoxGeometry(.07,.07,pl),dm);ap.position.set(s2*(cw/2+.03),(by+ty)/2,(wsZ+tx)/2);ap.rotation.x=Math.atan2(ty-by,wsZ-tx);g.add(ap)}
+  const roof=new THREE.Mesh(new THREE.BoxGeometry(cw+.2,.06,.9),dm);roof.position.set(0,ty+.04,tx-.8);g.add(roof);
+  const sw=new THREE.Group();const rimT=new THREE.Mesh(new THREE.TorusGeometry(.19,.024,8,28),new THREE.MeshLambertMaterial({color:"#0e0f12"}));sw.add(rimT);
   for(const a of[0,Math.PI,-Math.PI/2]){const s=new THREE.Mesh(new THREE.BoxGeometry(.17,.03,.02),new THREE.MeshLambertMaterial({color:"#2a2d33"}));s.position.set(Math.cos(a)*.09,Math.sin(a)*.09,0);s.rotation.z=a;sw.add(s)}
   const hub=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,.04,12),new THREE.MeshLambertMaterial({color:"#2a2d33"}));hub.rotation.x=Math.PI/2;sw.add(hub);
-  const holder=new THREE.Group();holder.position.set(d.x,floorY+.3,wsZ-.95);holder.rotation.x=-.45;holder.add(sw);g.add(holder);
-  g.userData.sw=sw;v.add(g);g.visible=false;return g}
+  const holder=new THREE.Group();holder.position.set(d.x,by-.13,wsZ-.66);holder.rotation.x=-.42;holder.add(sw);g.add(holder);
+  g.userData.sw=sw;g.userData.eye={x:d.x,y:by+.3,z:wsZ-1.22};v.add(g);g.visible=false;return g}
+function cockpitLayers(v,ck){const n=v.children.length;if(v.userData._lay===n)return;v.userData._lay=n;v.traverse(o=>o.layers.set(1));ck.traverse(o=>o.layers.set(0))}
 
 function lightBar(g,y,z){const b=new THREE.Group();const r=new THREE.Mesh(new THREE.BoxGeometry(.6,.2,.3),new THREE.MeshBasicMaterial({color:"#ff2a2a"}));r.position.x=-.32;const bl=new THREE.Mesh(new THREE.BoxGeometry(.6,.2,.3),new THREE.MeshBasicMaterial({color:"#2a6bff"}));bl.position.x=.32;b.add(r,bl);b.position.set(0,y,z);b.visible=false;b.userData={r,bl};g.add(b);return b}
 
@@ -2369,7 +2373,8 @@ function upsertRemote(id,s){if(!s||typeof s!=="object")return;const x=+s.x,z=+s.
   {const now=performance.now(),jump=Math.hypot(x-R.x,z-R.z);if(jump>45){R.x=x;R.z=z;R.r=r}
    R.vx=isFinite(+s.vx)?+s.vx:0;R.vz=isFinite(+s.vz)?+s.vz:0;R.at=now;
    /* snapshot buffer on the sender's clock -> even motion even when packets arrive bunched up */
-   const tm=+s.tm;let lt=now;if(isFinite(tm)&&tm>0){const off=now-tm;R.off=(R.off===undefined||jump>45)?off:Math.min(off,R.off+.5);lt=tm+R.off}
+   const tm=+s.tm;let lt=now;if(isFinite(tm)&&tm>0){const off=now-tm;R.off=(R.off===undefined||jump>45)?off:Math.min(off,R.off+.5);lt=tm+R.off;
+     const late=Math.max(0,off-R.off);R.jit=Math.max(late,(R.jit||0)*.985);const want=Math.max(110,Math.min(420,95+R.jit*1.25));R.dl=R.dl?R.dl+(want-R.dl)*(want>R.dl?.25:.02):want}
    if(!R.buf||jump>45)R.buf=[];R.buf.push({t:lt,x,z,r,vx:R.vx,vz:R.vz});if(R.buf.length>20)R.buf.shift()}
   R.tx=x;R.tz=z;R.tr=r;R.s=+s.s||0;R.seen=performance.now();R.cop=!!s.cop;R.sm=!!s.sm;R.m.userData.deco.visible=!!(s.wd||s.jw);R.m.userData.haz.visible=!!(s.wd||s.jw)&&Math.sin(seaT*7)>0;if(s.wd&&!R.conv)R.conv=newConvoy(()=>remotes[id]?{x:R.x,z:R.z,r:R.r}:null,5);if(!s.wd&&R.conv){const cv=R.conv;R.conv=null;cv.parked=true;dropConvoy(cv,8000)}
   const h=+s.h||0;if(h>R.h){const d=Math.hypot(R.x-P.x,R.z-P.z),v=Math.max(.15,1-d/250);if(s.wd||s.jw)bouri(v,pick(BOURI_PAT),1.05);else horn(v)}R.h=h}
@@ -2425,32 +2430,46 @@ async function netPeer(){
   const status=()=>{const ids=Object.keys(remotes),n=ids.length;let v=0;for(const id of ids)if(voiceOK(id))v++;setNet("ok",(isHost?"أنت المضيف":"متصل بالمضيف")+(n?` · ${n+1} لاعبين · 🔊 ${v}/${n}`:` · غرفة «${myCode}» · بانتظار صاحبك`))};
   function setupConn(conn){
     conn.on("open",()=>{conns.set(conn.peer,conn);if(conn.peer===hostId){clearTimeout(joinT);rejoinN=0}status();if(String(peer.id)<String(conn.peer))setTimeout(()=>{if(!calls.has(conn.peer))callPeer(conn.peer)},600)});
-    conn.on("data",d=>{if(!d||typeof d!=="object")return;const id=String(d.id||conn.peer).slice(0,64);if(id===peer.id)return;if(d.ev&&d.ev.k==="vc"){if(d.ev.to===peer.id)setTimeout(()=>callPeer(id),200)}else if(d.ev)onEvent(id,d.ev);else upsertRemote(id,d);if(isHost)for(const[pid,c]of conns)if(pid!==conn.peer&&c.open)c.send(d)});
+    conn.on("data",d=>{if(!d||typeof d!=="object")return;const id=String(d.id||conn.peer).slice(0,64);if(id===peer.id)return;if(d.ev&&d.ev.k==="vc"){if(d.ev.to===peer.id)setTimeout(()=>callPeer(id),200)}else if(d.ev)onEvent(id,d.ev);else upsertRemote(id,d);if(isHost)for(const[pid,c]of conns)if(pid!==conn.peer&&c.open&&(d.ev||!clogged(c)))c.send(d)});
     conn.on("close",()=>{conns.delete(conn.peer);removeRemote(conn.peer);status();if(!isHost&&conn.peer===hostId&&!migrating)rejoin("المضيف طلع — نرتّب الغرفة…")});
     conn.on("error",()=>{});
   }
+  /* slow link: drop position updates instead of queueing them (a queue = growing lag) */
+  function clogged(c){try{const dc=c.dataChannel||c._dc;return !!dc&&dc.bufferedAmount>12000}catch(e){return false}}
   let silent=null;function localStream(){if(mic)return mic;if(!silent){try{const ctx=(typeof AC!=="undefined"&&AC)||new (window.AudioContext||window.webkitAudioContext)();const d=ctx.createMediaStreamDestination();const g=ctx.createGain();g.gain.value=0;const o=ctx.createOscillator();o.connect(g);g.connect(d);o.start();silent=d.stream}catch(e){silent=new MediaStream()}}return silent}
   function pushMic(call){/* swap the silent track for the real mic on an existing call — no re-dial needed */
     try{const t=mic&&mic.getAudioTracks()[0];const pc=call&&call.peerConnection;if(!t||!pc)return false;const sd=pc.getSenders().find(x=>!x.track||x.track.kind==="audio");if(!sd)return false;sd.replaceTrack(t);return true}catch(e){return false}}
-  function onCall(call){call.answer(localStream());call._tx=true;handleCall(call);if(mic)setTimeout(()=>pushMic(call),400)}
+  function onCall(call){call.answer(localStream(),{sdpTransform:sdpVoice});call._tx=true;handleCall(call);if(mic)setTimeout(()=>pushMic(call),400)}
   function reconnectPeer(id){try{const c=calls.get(id);if(c&&c.open&&c.peerConnection&&/connected|completed/.test(c.peerConnection.iceConnectionState)){pushMic(c);return}}catch(e){}if(String(peer.id)<String(id))callPeer(id);else{const d={id:peer.id,ev:{k:"vc",to:id}};for(const cn of conns.values())if(cn.open)try{cn.send(d)}catch(e){}}}
   function iceWatch(call){try{const pc=call.peerConnection;if(!pc||call._iw)return;call._iw=1;let tm=0;pc.addEventListener("iceconnectionstatechange",()=>{const st=pc.iceConnectionState;clearTimeout(tm);if(st==="failed"||st==="disconnected"||st==="closed")tm=setTimeout(()=>{if(calls.get(call.peer)!==call)return;if(/connected|completed/.test(pc.iceConnectionState))return;if(!(remotes[call.peer]||conns.has(call.peer)))return;reconnectPeer(call.peer)},st==="disconnected"?4000:1200)})}catch(e){}}
   function handleCall(call){const old=calls.get(call.peer);if(old&&old!==call)try{old.close()}catch(e){}calls.set(call.peer,call);setTimeout(()=>iceWatch(call),300);setTimeout(()=>iceWatch(call),1500);
-    call.on("stream",s=>{let a=audios.get(call.peer);if(!a){a=document.createElement("audio");a.autoplay=true;a.playsInline=true;a.setAttribute("playsinline","");a.setAttribute("webkit-playsinline","");a.style.display="none";document.body.appendChild(a);audios.set(call.peer,a)}a.srcObject=s;a.muted=false;a.volume=1;duckWatch(call.peer,s);a.play().catch(()=>toast("اضغط على الشاشة لسماع صوت صاحبك"))});call.on("close",()=>{if(calls.get(call.peer)===call){calls.delete(call.peer);const a=audios.get(call.peer);if(a){try{a.srcObject=null}catch(e){}}}});call.on("error",()=>{})}
+    call.on("stream",s=>{let a=audios.get(call.peer);if(!a){a=document.createElement("audio");a.autoplay=true;a.playsInline=true;a.setAttribute("playsinline","");a.setAttribute("webkit-playsinline","");a.style.display="none";document.body.appendChild(a);audios.set(call.peer,a)}a.srcObject=s;a.muted=false;a.volume=(typeof HOWL!=="undefined"&&HOWL.att)||1;duckWatch(call.peer,s);toneWatch(call.peer,s);a.play().catch(()=>toast("اضغط على الشاشة لسماع صوت صاحبك"))});call.on("close",()=>{if(calls.get(call.peer)===call){calls.delete(call.peer);const a=audios.get(call.peer);if(a){try{a.srcObject=null}catch(e){}}}});call.on("error",()=>{})}
   const unlockAudio=()=>{for(const a of audios.values())if(a.paused&&a.srcObject)a.play().catch(()=>{});try{if(mic&&!document.hidden&&songsOn()&&songEl.paused&&songEl.src)songEl.play().catch(()=>{})}catch(e){}try{if(typeof AC!=="undefined"&&AC&&AC.state!=="running")AC.resume()}catch(e){}};addEventListener("pointerdown",unlockAudio,true);addEventListener("touchend",unlockAudio,true);
   /* speaker mode (Android): without the phone's call echo-canceller, Android keeps the loudspeaker instead of the call earpiece */
   async function openMic(){if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){const e=new Error("nomedia");e.name="NoMedia";throw e}
     const spk=!!CTL.spk;let raw;try{raw=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:!spk,noiseSuppression:true,autoGainControl:!spk}})}catch(e1){if(e1&&e1.name==="NotAllowedError")throw e1;raw=await navigator.mediaDevices.getUserMedia({audio:true})}
     if(!spk)return raw;
     try{const ctx=DUCK.ctx||(DUCK.ctx=new (window.AudioContext||window.webkitAudioContext)());try{ctx.resume()}catch(e){}
-      const src=ctx.createMediaStreamSource(raw),g=ctx.createGain(),dst=ctx.createMediaStreamDestination();src.connect(g);g.connect(dst);DUCK.g=g;
+      const src=ctx.createMediaStreamSource(raw),g=ctx.createGain(),dst=ctx.createMediaStreamDestination();const hp=ctx.createBiquadFilter();hp.type="highpass";hp.frequency.value=160;const an=ctx.createAnalyser();an.fftSize=1024;src.connect(hp);hp.connect(an);hp.connect(g);g.connect(dst);DUCK.g=g;DUCK.man=an;DUCK.mbuf=new Float32Array(an.fftSize);DUCK.floor=.004;DUCK.open=0;
       const out=dst.stream;out._raw=raw;out.getAudioTracks()[0].addEventListener("ended",()=>{});duckLoop();return out}catch(e){return raw}}
   const DUCK={ctx:null,g:null,mons:new Map(),timer:0,hold:0};
   function duckWatch(id,stream){if(!CTL.spk)return;try{const ctx=DUCK.ctx||(DUCK.ctx=new (window.AudioContext||window.webkitAudioContext)());const an=ctx.createAnalyser();an.fftSize=512;ctx.createMediaStreamSource(stream).connect(an);DUCK.mons.set(id,{an,buf:new Float32Array(an.fftSize)})}catch(e){}}
   function duckLoop(){clearInterval(DUCK.timer);DUCK.timer=setInterval(()=>{if(!DUCK.g)return;let lv=0;for(const m of DUCK.mons.values()){m.an.getFloatTimeDomainData(m.buf);let q=0;for(let i=0;i<m.buf.length;i++)q+=m.buf[i]*m.buf[i];lv=Math.max(lv,Math.sqrt(q/m.buf.length))}
-    const now=performance.now();if(lv>.012)DUCK.hold=now+450;const tgt=now<DUCK.hold?.07:1;try{DUCK.g.gain.setTargetAtTime(tgt,DUCK.ctx.currentTime,tgt<1?.015:.12)}catch(e){}},40)}
+    const now=performance.now();if(lv>.008)DUCK.hold=now+650;
+    /* voice gate: the phone's own game sound (engine, horn) reaches the mic in speaker mode -> only open while someone actually talks */
+    let ml=1;if(DUCK.man){DUCK.man.getFloatTimeDomainData(DUCK.mbuf);let q=0;const b=DUCK.mbuf;for(let i=0;i<b.length;i++)q+=b[i]*b[i];ml=Math.sqrt(q/b.length);DUCK.floor=ml<DUCK.floor?DUCK.floor*.6+ml*.4:Math.min(.06,DUCK.floor+(ml-DUCK.floor)*.004);if(ml>Math.max(.014,DUCK.floor*2.4))DUCK.open=now+420}
+    const tgt=now<DUCK.hold?.025:(!DUCK.man||now<DUCK.open)?1:.05;try{if(DUCK.ctx.state!=="running")DUCK.ctx.resume();DUCK.g.gain.setTargetAtTime(tgt,DUCK.ctx.currentTime,tgt<1?.02:.012)}catch(e){}},40)}
+  /* receive side: a pure whistle coming from another phone (feedback loop) is turned down here, whoever causes it */
+  const TONE={mons:new Map(),timer:0};
+  function toneWatch(id,stream){try{const ctx=DUCK.ctx||(DUCK.ctx=new (window.AudioContext||window.webkitAudioContext)());try{ctx.resume()}catch(e){}const an=ctx.createAnalyser();an.fftSize=2048;an.smoothingTimeConstant=.3;ctx.createMediaStreamSource(stream).connect(an);TONE.mons.set(id,{an,buf:new Float32Array(an.frequencyBinCount),bin:-9,hits:0,sup:0});
+    if(!TONE.timer)TONE.timer=setInterval(()=>{const base=(typeof HOWL!=="undefined"&&HOWL.att)||1;for(const[pid,m]of TONE.mons){const a=audios.get(pid);if(!a){TONE.mons.delete(pid);continue}
+      m.an.getFloatFrequencyData(m.buf);const b=m.buf,bw=ctx.sampleRate/m.an.fftSize,lo=Math.floor(250/bw),hi=Math.min(b.length-1,Math.floor(6000/bw));let mx=-200,mi=lo,sum=0,n=0;for(let i=lo;i<=hi;i++){const v=Math.max(-120,b[i]);if(v>mx){mx=v;mi=i}sum+=v;n++}
+      let m2=-200;for(let i=lo;i<=hi;i++)if(Math.abs(i-mi)>4&&b[i]>m2)m2=b[i];
+      const tonal=mx>-52&&mx-sum/n>30&&mx-m2>14&&Math.abs(mi-m.bin)<=3;m.bin=mi;m.hits=tonal?m.hits+1:Math.max(0,m.hits-2);
+      if(m.hits>=6)m.sup=performance.now()+1500;const v=performance.now()<m.sup?.12*base:base;if(Math.abs(a.volume-v)>.01)try{a.volume=v}catch(e){}}},100)}catch(e){}}
   function redial(){const targets=new Set(isHost?[...conns.keys()]:[hostId]);for(const id in remotes)targets.add(id);targets.forEach(id=>{const c=calls.get(id);if(c&&c.open)pushMic(c);if(String(peer.id)<String(id))callPeer(id);else{const d={id:peer.id,ev:{k:"vc",to:id}};for(const cn of conns.values())if(cn.open)try{cn.send(d)}catch(e){}}})}
-  function callPeer(pid){try{const c=peer.call(pid,localStream());if(!c)return;c._tx=true;handleCall(c)}catch(e){}}
+  function sdpVoice(sdp){try{return sdp.replace(/a=fmtp:(\d+) ([^\r\n]*useinbandfec=1[^\r\n]*)/g,(m,pt,rest)=>/usedtx/.test(rest)?m:"a=fmtp:"+pt+" "+rest+";usedtx=1;stereo=0;maxaveragebitrate=24000")}catch(e){return sdp}}
+  function callPeer(pid){try{const c=peer.call(pid,localStream(),{sdpTransform:sdpVoice});if(!c)return;c._tx=true;handleCall(c)}catch(e){}}
   function startHost(){return new Promise(res=>{isHost=false;peer=new Peer(hostId,PCFG);
     peer.on("open",()=>{isHost=true;status();res()});peer.on("connection",setupConn);peer.on("call",onCall);
     peer.on("error",e=>{if(e.type==="unavailable-id"){peer.destroy();startGuest().then(res)}else if(e.type==="peer-unavailable"){res()}else{setNet(/network|socket|server|disconnected/.test(e.type)?"warn":"err","خطأ اتصال: "+e.type);res()}});
@@ -2478,7 +2497,7 @@ async function netPeer(){
   await startHost();
   setInterval(()=>{for(const id in remotes)if(performance.now()-remotes[id].seen>6000)removeRemote(id);if(peer&&!peer.destroyed&&!migrating&&peer.open)status()},2000);
   return{voice:true,
-    myId(){return peer&&peer.id},diag(){showDiag(true)},send(s){const d=Object.assign({id:peer&&peer.id},s);for(const c of conns.values())if(c.open)try{c.send(d)}catch(e){}},
+    myId(){return peer&&peer.id},diag(){showDiag(true)},send(s){const d=Object.assign({id:peer&&peer.id},s);for(const c of conns.values())if(c.open&&!clogged(c))try{c.send(d)}catch(e){}},
     ev(e){const d={id:peer&&peer.id,ev:e};for(const c of conns.values())if(c.open)try{c.send(d)}catch(_){}},
     async mic(on){if(on){if(!mic){mic=await openMic();howlWatch(mic._raw||mic);fixAudioAfterMic();redial()}else mic.getAudioTracks().forEach(t=>t.enabled=true)}
       else if(mic)mic.getAudioTracks().forEach(t=>t.enabled=false)},
@@ -2532,10 +2551,10 @@ function howlWatch(stream){try{
   HOWL.timer=setInterval(()=>{if(!HOWL.an)return;const t=stream.getAudioTracks()[0];if(!t||t.readyState!=="live"){clearInterval(HOWL.timer);return}
     if(HOWL.cool>0){HOWL.cool-=100;if(HOWL.cool<=0){stream.getAudioTracks().forEach(x=>x.enabled=micWanted())}return}
     if(!t.enabled)return;HOWL.an.getFloatFrequencyData(HOWL.buf);const b=HOWL.buf,sr=HOWL.ctx.sampleRate,bw=sr/HOWL.an.fftSize;
-    const lo=Math.floor(400/bw),hi=Math.min(b.length-1,Math.floor(6000/bw));let mx=-200,mi=lo,sum=0,n=0;
+    const lo=Math.floor(250/bw),hi=Math.min(b.length-1,Math.floor(6000/bw));let mx=-200,mi=lo,sum=0,n=0;
     for(let i=lo;i<=hi;i++){const v=b[i];if(v>mx){mx=v;mi=i}sum+=v;n++}const avg=sum/n;
-    const tonal=mx>-45&&mx-avg>32;HOWL.last=[mx,avg];HOWL.hits=tonal?HOWL.hits+1:Math.max(0,HOWL.hits-1);
-    if(HOWL.hits>=5){HOWL.hits=0;HOWL.cool=1600;stream.getAudioTracks().forEach(x=>x.enabled=false);
+    const tonal=mx>-50&&mx-avg>29;HOWL.last=[mx,avg];HOWL.hits=tonal?HOWL.hits+1:Math.max(0,HOWL.hits-1);
+    if(HOWL.hits>=4){HOWL.hits=0;HOWL.cool=2400;HOWL.att=Math.max(.4,(HOWL.att||1)*.75);stream.getAudioTracks().forEach(x=>x.enabled=false);
       if(performance.now()-HOWL.warned>60000){HOWL.warned=performance.now();toast("🔇 فيه طنين — الجوالات قريبة من بعض أو الصوت عالي. وقّفنا المايك لحظة. الأفضل تلبسون سماعات.",5000)}}},100)}catch(e){}}
 function micWanted(){const b=document.getElementById("micBtn");return !!(b&&/شغّال/.test(b.textContent))}
 function fixAudioAfterMic(){/* iOS pauses Web Audio when the mic opens; wake it up again */
@@ -2556,7 +2575,7 @@ $("micBtn").onclick=async()=>{
     toast("لحظة… نكمّل الاتصال، والمايك يشتغل بعدها",2500);
     for(let i=0;i<30&&!(net&&net.voice);i++)await new Promise(r=>setTimeout(r,500));
     if(!net||!net.voice){toast("الأونلاين ما اتصل. تأكد من النت وحدّث الصفحة، وبعدها اضغط المايك.",6000);return}}
-  try{micOn=!micOn;await net.mic(micOn);$("micBtn").classList.toggle("on",micOn);$("micBtn").textContent=micOn?"🎤 شغّال":"🔇 مكتوم";toast(micOn?"المايك شغّال — صاحبك يسمعك":"تم كتم المايك")}
+  try{micOn=!micOn;await net.mic(micOn);try{setVol()}catch(e){}$("micBtn").classList.toggle("on",micOn);$("micBtn").textContent=micOn?"🎤 شغّال":"🔇 مكتوم";toast(micOn?"المايك شغّال — صاحبك يسمعك":"تم كتم المايك")}
   catch(err){micOn=false;$("micBtn").classList.remove("on");$("micBtn").textContent="🎤 المايك";toast(micErrText(err),7000)}};
 function doHorn(){hornCount++;if((MS.mode==="wedding"&&MS.state==="drop")||JW.on){MS.horns++;bouri(1,pick(BOURI_PAT),1);car.userData.flash.visible=true;setTimeout(()=>car.userData.flash.visible=false,500)}else horn(1)}
 $("hornBtn").onclick=doHorn;
@@ -2762,8 +2781,8 @@ addEventListener("resize",()=>{if(!$("bigmap").hidden)drawBig()});
 /* ================= stations: fuel, repair, tow ================= */
 let actKey="";
 function inRect(r){return P.x>r.x0&&P.x<r.x1&&P.z>r.z0&&P.z<r.z1}
-function stepStations(sp){if(FILL.on||WALK.on)return;let html="",key="";
-  {const K=sp<1&&nearKids();if(K){key="eid"+KIDS.indexOf(K);html=`<span>👧👦 أطفال العيد</span><button data-x="eid" class="pri">🎁 أعطهم عيدية · ٢٠٠ ريال</button>`}}
+let eidShow={k:"",t:0};function stepStations(sp){if(FILL.on)return;if(WALK.on){if(actKey!==""){actKey="";$("action").hidden=true}return}let html="",key="";
+  {let K=sp<1&&nearKids();if(K){const kk="eid"+KIDS.indexOf(K),nw=performance.now();if(eidShow.k!==kk||nw-eidShow.t>30000)eidShow={k:kk,t:nw};else if(nw-eidShow.t>9000){K.cd=60;K=null}}if(K){key="eid"+KIDS.indexOf(K);html=`<span>👧👦 أطفال العيد</span><button data-x="eid" class="pri">🎁 أعطهم عيدية · ٢٠٠ ريال</button>`}}
   const stuck=P.hp<=0||P.fuel<=0;
   if(sp<2.5)for(const s of STATIONS){
     if(inRect(s.fuel)&&P.fuel<.99){const c=Math.ceil((1-P.fuel)*40*VT().tank*12);key="f"+c;html=`<button data-x="fuel" class="pri">⛽ عبّي الخزان · ${fmt(c)} ريال</button>`}
@@ -2857,7 +2876,7 @@ function todName(){const t=TOD.t;return t<.5?"نهار":t<.62?"غروب":t<.88?"
 function saveSafe(){if(RC.on||CH.on||MS.state==="drop"||frozen>0)return;if(Math.hypot(P.vx,P.vz)>25)return;let bd=1e9;
   for(const r of ROADS){const dx=r[2]-r[0],dz=r[3]-r[1],L2=dx*dx+dz*dz||1;let t=((P.x-r[0])*dx+(P.z-r[1])*dz)/L2;t=Math.max(0,Math.min(1,t));bd=Math.min(bd,Math.hypot(r[0]+dx*t-P.x,r[1]+dz*t-P.z))}
   if(bd<8&&!collide(P.x,P.z,2.4).hit)SAVE.pos={x:+P.x.toFixed(1),z:+P.z.toFixed(1),r:+P.r.toFixed(3)}}
-function masterVol(){return CTL.mute?0:CTL.vol}
+function masterVol(){return CTL.mute?0:CTL.vol*((typeof micOn!=="undefined"&&micOn&&CTL.spk)?.5:1)}
 function setVol(){if(OUT)OUT.gain.setTargetAtTime(masterVol(),AC.currentTime,.05);songEl.volume=Math.min(1,.85*masterVol())}
 const SFX={br:false};
 function brakeSqueal(v){if(!AC||document.hidden)return;const t=AC.currentTime,o=AC.createOscillator(),o2=AC.createOscillator(),g=AC.createGain(),bp=AC.createBiquadFilter();o.type="triangle";o.frequency.setValueAtTime(2050,t);o.frequency.linearRampToValueAtTime(1750,t+.7);
@@ -3823,7 +3842,7 @@ FT.push({n:"ورشة الشيخ عثمان",x:WS.x,z:WS.z-18,r:0},{n:"ساحة �
 /* Coastal realism pack: bounded geometry, no additional downloads. */
 const REAL={t:0,signal:0,car:null,lamps:[],clouds:[],birds:[],lounges:[],scan:0,distance:Infinity};
 document.head.insertAdjacentHTML('beforeend',`<style>
-#realTools{position:absolute;right:12px;top:calc(108px + env(safe-area-inset-top,0px));display:flex;gap:5px;pointer-events:auto}#realTools[hidden]{display:none}#realTools button{background:#102c38dd;color:#f4e5c4;border:1px solid #a6baa455;border-radius:10px;min-width:39px;height:36px;font-size:18px}#realTools button.active{background:#b66c17;color:white}#realInfo{position:absolute;left:50%;transform:translateX(-50%);bottom:8px;background:#10232bd9;color:#e7efed;padding:5px 12px;border-radius:20px;font:12px sans-serif;white-space:nowrap;pointer-events:none}#realGlass{position:fixed;inset:0;pointer-events:none;z-index:3}#realGlass[hidden]{display:none}#realGlass i{position:absolute;width:3px;height:15px;background:linear-gradient(transparent,#d9edfa88);border-radius:100%;animation:realRain 1.1s linear infinite}#realGlass b{position:absolute;bottom:-2%;left:23%;width:44%;height:5px;background:#171d22;box-shadow:0 1px 1px #888;transform-origin:0 50%;animation:realWipe 1.3s ease-in-out infinite alternate}#realGlass b:last-child{left:55%;width:38%}@keyframes realRain{to{translate:8px 80px;opacity:0}}@keyframes realWipe{from{transform:rotate(-12deg)}to{transform:rotate(-145deg)}}@media(max-width:640px){#realTools{top:calc(195px + env(safe-area-inset-top,0px));right:6px}#realTools button{min-width:32px;height:32px}#realInfo{font-size:10px;bottom:3px}}
+#realTools{position:absolute;right:12px;top:calc(108px + env(safe-area-inset-top,0px));display:flex;gap:5px;pointer-events:auto}#realTools,#realTools[hidden]{display:none!important}#controls .aux,.aux #nitroBtn,.aux #hbBtn{display:none!important}#realTools button{background:#102c38dd;color:#f4e5c4;border:1px solid #a6baa455;border-radius:10px;min-width:39px;height:36px;font-size:18px}#realTools button.active{background:#b66c17;color:white}#realInfo{position:absolute;left:50%;transform:translateX(-50%);bottom:8px;background:#10232bd9;color:#e7efed;padding:5px 12px;border-radius:20px;font:12px sans-serif;white-space:nowrap;pointer-events:none}#realGlass{position:fixed;inset:0;pointer-events:none;z-index:3}#realGlass[hidden]{display:none}#realGlass i{position:absolute;width:3px;height:15px;background:linear-gradient(transparent,#d9edfa88);border-radius:100%;animation:realRain 1.1s linear infinite}#realGlass b{position:absolute;bottom:-2%;left:23%;width:44%;height:5px;background:#171d22;box-shadow:0 1px 1px #888;transform-origin:0 50%;animation:realWipe 1.3s ease-in-out infinite alternate}#realGlass b:last-child{left:55%;width:38%}@keyframes realRain{to{translate:8px 80px;opacity:0}}@keyframes realWipe{from{transform:rotate(-12deg)}to{transform:rotate(-145deg)}}@media(max-width:640px){#realTools{top:calc(195px + env(safe-area-inset-top,0px));right:6px}#realTools button{min-width:32px;height:32px}#realInfo{font-size:10px;bottom:3px}}
 </style>`);
 const realTools=document.createElement('div');realTools.id='realTools';realTools.innerHTML='<button title="غماز يسار" aria-label="غماز يسار" data-s="-1">◀</button><button title="فلشر" aria-label="فلشر" data-s="2">⚠</button><button title="غماز يمين" aria-label="غماز يمين" data-s="1">▶</button>';$('hud').appendChild(realTools);
 const realInfo=document.createElement('div');realInfo.id='realInfo';$('hud').appendChild(realInfo);
@@ -3876,7 +3895,7 @@ function frame(now){requestAnimationFrame(frame);let dt=Math.min(.05,(now-last)/
   // traffic
   stepTraffic(dt);
   // remotes
-  for(const id in remotes){const R=remotes[id];{const B=R.buf,rt=performance.now()-110;let px=R.tx,pz=R.tz,pr=R.tr;
+  for(const id in remotes){const R=remotes[id];{const B=R.buf,rt=performance.now()-(R.dl||110);let px=R.tx,pz=R.tz,pr=R.tr;
      if(B&&B.length){let i=B.length-1;while(i>0&&B[i-1].t>rt)i--;
        if(i>0&&B[i].t>=rt){const a=B[i-1],c=B[i],u=Math.max(0,Math.min(1,(rt-a.t)/Math.max(1,c.t-a.t)));px=a.x+(c.x-a.x)*u;pz=a.z+(c.z-a.z)*u;let d=c.r-a.r;d=Math.atan2(Math.sin(d),Math.cos(d));pr=a.r+d*u}
        else{const l=B[B.length-1],ex=Math.max(0,Math.min(.3,(rt-l.t)/1000));px=l.x+l.vx*ex;pz=l.z+l.vz*ex;pr=l.r}}
@@ -3889,7 +3908,7 @@ function frame(now){requestAnimationFrame(frame);let dt=Math.min(.05,(now-last)/
   if(playing){
     P.steer=steerAxis(dt);
     phAcc+=dt;let ns=0;while(phAcc>=PH_DT&&ns<10){fwd=stepPlayer(PH_DT);phAcc-=PH_DT;ns++}if(ns===10)phAcc=0;if(!ns)fwd=P.vx*Math.sin(P.r)+P.vz*Math.cos(P.r);
-    car.position.set(P.x,groundY(P.x,P.z)+P.sy*.18,P.z);car.rotation.order="YXZ";{const fx=Math.sin(P.r)*1.6,fz=Math.cos(P.r)*1.6;const sl=(groundY(P.x+fx,P.z+fz)-groundY(P.x-fx,P.z-fz))/3.2;P.slope+=(Math.atan(Math.abs(sl)<.2?sl:0)-P.slope)*Math.min(1,dt*10)}car.rotation.set(P.pitch-P.slope,P.r,P.roll);
+    car.position.set(P.x,groundY(P.x,P.z)+P.sy*.18,P.z);car.rotation.order="YXZ";{const fx=Math.sin(P.r)*1.6,fz=Math.cos(P.r)*1.6;const sl=(groundY(P.x+fx,P.z+fz)-groundY(P.x-fx,P.z-fz))/3.2;P.slope+=(Math.atan(Math.abs(sl)<.5?sl:0)-P.slope)*Math.min(1,dt*10)}car.rotation.set(P.pitch-P.slope,P.r,P.roll);
     for(const w of car.userData.wheels)w.rotation.x+=fwd*dt/.42;
     {const sa=P.steer*.6/(1+Math.pow(Math.abs(fwd)/20,2)*1.4);if(car.userData.type!=="moto")car.userData.wheels[0].rotation.y=car.userData.wheels[1].rotation.y=sa;else car.userData.wheels[0].rotation.y=sa}
     stepCarFX(dt,fwd);drawFuel();if(car.userData.setLights)car.userData.setLights(P.brk>.15,P.gear==="R");
@@ -3907,8 +3926,8 @@ function frame(now){requestAnimationFrame(frame);let dt=Math.min(.05,(now-last)/
        want=_v.set(P.x-Math.sin(lr)*dist,groundY(P.x,P.z)+hgt,P.z-Math.cos(lr)*dist).clone();
        const gy0=groundY(P.x,P.z);look=new THREE.Vector3(P.x+Math.sin(P.r+yawLook)*5,gy0+1.3*bb,P.z+Math.cos(P.r+yawLook)*5);
        want=camClip(new THREE.Vector3(P.x,gy0+1.8*bb,P.z),want);camPos.lerp(want,Math.min(1,dt*7));camLook.lerp(look,Math.min(1,dt*10))}
-     else{const d=camMode===1?u.drv:{x:0,y:u.hood.y,z:u.hood.z};const p=new THREE.Vector3(d.x,d.y,d.z);car.updateMatrixWorld();p.applyMatrix4(car.matrixWorld);camPos.copy(p);
-       const q=new THREE.Vector3(d.x,d.y-(camMode===1?.12:.18),d.z+20);q.applyMatrix4(car.matrixWorld);camLook.copy(q)}
+     else{const d=camMode===1?((cockpit&&cockpit.userData.eye)||u.drv):{x:0,y:u.hood.y,z:u.hood.z};const p=new THREE.Vector3(d.x,d.y,d.z);car.updateMatrixWorld();p.applyMatrix4(car.matrixWorld);camPos.copy(p);
+       const q=new THREE.Vector3(d.x,d.y-(camMode===1?1.1:.18),d.z+20);q.applyMatrix4(car.matrixWorld);camLook.copy(q)}
      camera.position.copy(camPos);if(camShake>0&&CTL.shake){camera.position.x+=(Math.random()-.5)*camShake*.3;camera.position.y+=(Math.random()-.5)*camShake*.3;camShake=Math.max(0,camShake-dt*2.5)}
      camera.lookAt(camLook);
      camera.fov+=(((innerWidth<innerHeight)?75:62)+(camMode===1?6:0)+(input.nitro&&P.thr>.5&&P.nitro>.02?8:0)-camera.fov)*Math.min(1,dt*4);camera.near=camMode===1?.08:.5;camera.updateProjectionMatrix()}
@@ -3924,6 +3943,7 @@ function frame(now){requestAnimationFrame(frame);let dt=Math.min(.05,(now-last)/
   stepTOD(dt);stepWeather(dt);stepShips(dt);stepFount();stepWaves();if(playing){stepAban();stepPray(dt);stepEid(dt);stepLandmarks(dt)}stepBeam();if(playing)stepCity(dt);if(playing)stepSfx(fwd);
   if(playing){stepJoinWed();stepFill(dt,fwd);stepRadar(dt,fwd);stepPolice(dt,fwd);stepMission(dt,fwd);stepPark(dt,fwd);stepGPS(dt);stepGood(dt,fwd);stepRace(dt);stepChase(dt);stepAmb(dt);stepPerf(dt);stT+=dt;if(stT>.2){stT=0;stepStations(Math.abs(fwd))}}
   stepX3(dt,fwd);try{stepRealism(dt);stepLife(dt)}catch(e){}
+  {const inC=!!(playing&&cockpit&&cockpit.visible&&camMode===1);if(inC)cockpitLayers(car,cockpit);camera.layers.mask=inC?1:3}
   SKYDOME.position.set(camera.position.x,0,camera.position.z);renderer.render(scene,camera);if(firstFrame){firstFrame=false;setTimeout(()=>{$("loading").hidden=true},Math.max(250,2800-performance.now()))}}
 applyQuality();setCash();requestAnimationFrame(frame);
 addEventListener("pagehide",()=>{try{net&&net.leave()}catch(e){}});
