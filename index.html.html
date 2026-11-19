@@ -214,7 +214,7 @@ button.chip.on{background:var(--sea);border-color:transparent;color:#04252a}
   <form class="card" id="form" autocomplete="off">
     <div class="brand">
       <h1>شوارع <span>عدن</span></h1>
-      <p>سُق في كورنيش ساحل أبين، لِف حول جولة البسيري، واعبر نفق العقبة إلى كريتر مع صاحبك أونلاين.</p>
+      <p>سُق في ساحل أبين، لِف حول جولة كالتكس، واعبر عقبة عدن، وادخل نفق القلوعة إلى جولد مور مع صاحبك أونلاين.</p>
     </div>
     <div class="kerb" aria-hidden="true"></div>
     <label class="f">اسمك في اللعبة
@@ -4306,7 +4306,7 @@ addEventListener("pagehide",()=>{try{net&&net.leave()}catch(e){}});
   const b=document.getElementById("fsBtn");
 const canFS=!!(de.requestFullscreen||de.webkitRequestFullscreen)&&!/iPhone|iPod/.test(navigator.userAgent);
  let deferred=null;
- if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+ if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").then(r=>r&&r.update&&r.update().catch(()=>{})).catch(()=>{}));
  addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferred=e;if(b&&!isStand()){b.hidden=false;b.textContent="📲 ثبّت اللعبة على جوالك"}});
  addEventListener("appinstalled",()=>{deferred=null;if(b)b.hidden=true;if(typeof toast==="function")toast("✅ تم تثبيت شوارع عدن",2000)});
  function tip(){if(document.getElementById("fsTip"))return;const d=document.createElement("div");d.id="fsTip";
