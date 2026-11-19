@@ -104,7 +104,8 @@ button.chip.on{background:var(--sea);border-color:transparent;color:#04252a}
 #ctlL{left:max(12px,env(safe-area-inset-left,0px));display:grid;grid-template-columns:auto auto auto;grid-template-areas:"gear aux ped";gap:10px;align-items:end}
 #ctlR{right:max(12px,env(safe-area-inset-right,0px))}
 #footL{left:max(16px,env(safe-area-inset-left,0px));display:none}#footR{position:absolute;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(20px + env(safe-area-inset-bottom,0px));display:none;flex-direction:column;align-items:flex-end;gap:12px;pointer-events:auto}
-body.onfoot #ctlL,body.onfoot #ctlR,body.onfoot #speedo,body.onfoot #fuelG,body.onfoot #action{display:none!important}body.onfoot #footL{display:block}body.onfoot #footR{display:flex}
+body.onfoot #ctlL,body.onfoot #ctlR,body.onfoot #speedo,body.onfoot #fuelG,body.onfoot #action{display:none!important}
+body.riding #ctlL,body.riding #ctlR,body.riding #fuelG,body.riding #action,body.riding #footL,body.riding #footR{display:none!important}body.onfoot #footL{display:block}body.onfoot #footR{display:flex}
 #joy{width:132px;height:132px;border-radius:50%;background:rgba(10,20,26,.42);border:2px solid rgba(255,255,255,.25);position:relative;touch-action:none}#joyK{position:absolute;left:39px;top:39px;width:54px;height:54px;border-radius:50%;background:rgba(255,255,255,.85);box-shadow:0 2px 10px rgba(0,0,0,.4)}
 #ctxBtn{font-family:var(--display);font-size:20px;background:var(--copper);color:#1b0e06;border:0;border-radius:14px;padding:12px 18px 8px;box-shadow:0 4px 14px rgba(0,0,0,.35)}#runBtn{width:64px;height:64px}@media (hover:hover) and (pointer:fine){#runBtn{display:none}}
 .gearbox{grid-area:gear;display:flex;flex-direction:column;gap:6px;background:rgba(13,26,34,.55);border:2px solid rgba(255,255,255,.15);border-radius:14px;padding:6px}
@@ -2000,7 +2001,7 @@ function stepTraffic(dt){updSignals(dt);const cx=camera.position.x,cz=camera.pos
     const p=loopPos(t.lp,t.d),hx=Math.sin(p.r),hz=Math.cos(p.r),ax=Math.abs(hx)>Math.abs(hz);
     const fast=(p.x<-345&&p.x>-785&&(Math.abs(p.z-180)<12||Math.abs(p.z+60)<10));let lim=t.v*(fast?1.35:1),byP=false;
     const chk=(ox,oz,gap,pl)=>{const rx=ox-p.x,rz=oz-p.z,al=rx*hx+rz*hz;if(al<=0||al>24)return;if(Math.abs(rx*hz-rz*hx)>2.4)return;const l=Math.max(0,(al-gap)*1.2);if(l<lim){lim=l;byP=!!pl}};
-    if(playing)chk(P.x,P.z,7.5,1);if(WALK.on&&!WALK.inside)chk(WALK.x,WALK.z,6,1);for(const o of traffic)if(o!==t&&!o.off)chk(o.x,o.z,(t.len||o.len)?9.5:7);for(const id in remotes)chk(remotes[id].x,remotes[id].z,7.5,1);for(const q of XPEDS)if(!q.hit)chk(q.x,q.z,5);
+    if(playing)chk(P.x,P.z,7.5,1);if(WALK.on&&!WALK.inside)chk(WALK.x,WALK.z,6,1);for(const o of traffic)if(o!==t&&!o.off)chk(o.x,o.z,(t.len||o.len)?9.5:7);for(const id in remotes)if(!remotes[id].rd)chk(remotes[id].x,remotes[id].z,7.5,1);for(const q of XPEDS)if(!q.hit)chk(q.x,q.z,5);
     for(const S of SIGS){const rx=S[0]-p.x,rz=S[1]-p.z,al=rx*hx+rz*hz;if(al<RW/2+2||al>RW/2+34||Math.abs(rx*hz-rz*hx)>RW/2)continue;const st=sigState(ax);if(st==="g")continue;const stop=al-(RW/2+5);if(st==="y"&&stop<5)continue;lim=Math.min(lim,Math.max(0,stop*.8));byP=false}
     t.cv+=Math.max(-9*dt,Math.min(3.2*dt,lim-t.cv));t.d+=t.cv*dt;
     if(byP&&t.cv<.5){t.wait+=dt;if(t.wait>4){t.wait=-6;const d=Math.hypot(t.x-P.x,t.z-P.z);if(d<40&&AC)beep(t.kind==="bus"?300:430,.22)}}else if(!byP)t.wait=0;
@@ -2165,7 +2166,7 @@ const MODE_N={tour:"🏛️ مشوار سياحي",taxi:"🚕 مشاوير عد�
 function txPanel(t){const el=$("mission");el.hidden=!t;if(t)el.innerHTML=t}
 function txTarget(){return MS.state==="pickup"?MS.from:MS.state==="drop"?MS.to:null}
 function farFrom(list,min){const o=list.filter(d=>Math.hypot(d.x-P.x,d.z-P.z)>min);return pick(o.length?o:list)}
-function startMission(mode){if(RC.on||CH.on){toast("خلّص السباق أو المطاردة أول");return}if(PK.on)stopPark();stopMission(true);MS.mode=mode;MS.to=null;newPickup();closeSheet()}
+function startMission(mode){if(rideBusy())return;if(RC.on||CH.on){toast("خلّص السباق أو المطاردة أول");return}if(PK.on)stopPark();stopMission(true);MS.mode=mode;MS.to=null;newPickup();closeSheet()}
 function newPickup(){const list=MS.mode==="delivery"?SHOPS:DEST;const d=farFrom(list,60);
   MS.contract=pick(MS.mode==="delivery"?["fragile","urgent","smooth"]:MS.mode==="taxi"?["urgent","smooth","clean"]:["clean","smooth"]);MS.rough=0;MS.from=d;MS.state="pickup";MS.crashes=0;MS.horns=0;MS.over=0;mPick.position.set(d.x,0,d.z);mPick.visible=true;mDrop.visible=false;
   if(MS.pax)scene.remove(MS.pax);MS.pax=null;
@@ -2178,7 +2179,7 @@ function setCargo(on){if(MS.cargo){car.remove(MS.cargo);MS.cargo=null}if(!on)ret
 /* ================= minibus line (خط الفرزة): stop at each فرزة, passengers get off and on, fare per passenger ================= */
 const BUS_LINE=[{n:"كريتر",x:-100,z:430},{n:"المعلا",x:-120,z:-400},{n:"التواهي",x:-440,z:-490},{n:"خور مكسر",x:-240,z:-180},{n:"جولة كالتكس",x:-830,z:180},{n:"المنصورة",x:-965,z:186},{n:"الشيخ عثمان",x:-1295,z:60}];
 const BUS={on:false,i:0,dir:1,pax:0,earned:0,stopT:0,stop:null,ring:null,pp:[],board:[],wait:0,placed:true,first:true,cap:14,fare:150};
-function busStart(){if(SAVE.car!=="bus"){toast("خط الفرزة يحتاج الباص الصغير 🚐 — غيّره من القائمة ← السيارات",3600);return}
+function busStart(){if(rideBusy())return;if(SAVE.car!=="bus"){toast("خط الفرزة يحتاج الباص الصغير 🚐 — غيّره من القائمة ← السيارات",3600);return}
   if(RC.on||CH.on){toast("خلّص السباق أو المطاردة أول");return}
   if(MS.mode)stopMission(true);if(PK.on)stopPark();
   if(!BUS.ring)BUS.ring=mkMarker("#3aa0ff");
@@ -2326,15 +2327,93 @@ function stepChase(dt){if(!CH.on)return;CH.t+=dt;const left=Math.max(0,CH.limit-
   else{txPanel(`<b>🏃 اهرب من الشرطي!</b><span>الشرطي على بعد ${fmt(od)} م · ⏱ ${Math.ceil(left)} ث</span>`);
     if(left<=0){net&&net.ev({k:"chase",a:"end",caught:0});endChase(false)}}}
 
+/* ================= ride with a friend: hop into a friend's car as a passenger =================
+   Walk up to a friend's car and tap «اركب مع…», or the driver invites you from the menu.
+   Your own car comes along hidden and is parked right behind your friend's car when you get out. */
+const RIDE={on:false,host:null,seat:1,ck:null,ckm:null,last:null,lr:null,sw:0,inv:null};
+const NETV=42;   // version tag in the state: riding needs a friend on this version or newer
+const escH=t=>String(t==null?"":t).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function rideSeats(type){return type==="moto"?1:type==="bus"?6:3}
+function rideFreeSeat(hostId,type){const used=new Set();for(const id in remotes){const R=remotes[id];if(R.rd===hostId)used.add(R.st|0)}const n=rideSeats(type);for(let i=1;i<=n;i++)if(!used.has(i))return i;return 0}
+function ridersWithMe(){const me=myNetId();if(!me)return[];return Object.keys(remotes).filter(id=>remotes[id].rd===me)}
+function rideNear(){if(!myNetId())return null;const W=WALK;let best=null;for(const id in remotes){const R=remotes[id];if(R.rd||(R.wm&&R.wm.visible)||(R.vr|0)<NETV)continue;const d=Math.hypot(W.x-R.x,W.z-R.z);if(d<3.8&&(!best||d<best.d))best={id,n:R.n,d}}return best}
+function rideBusy(what){if(RIDE.on){toast("انزل من سيارة صاحبك أول 🚪",1700);return true}if(what==="chase"&&ridersWithMe().length){toast("صاحبك راكب معك — نزّله أول عشان تبدأ مطاردة",2200);return true}return false}
+function rideIn(id,tele){const R=remotes[id];if(!R||!myNetId()){toast("صاحبك مو موجود الحين",1500);return}if(RIDE.on)return;
+  if(MS.mode||RC.on||CH.on||JW.on||FILL.on||(typeof BUS!=="undefined"&&BUS.on)||(POL.on&&!POL.quit)){toast("خلّص اللي بيدك أول",1600);return}
+  if(R.rd){toast(`${R.n} راكب مع أحد ثاني`,1600);return}
+  if((R.vr|0)<NETV){toast(`${R.n} لازم يفتح الرابط الجديد للعبة`,2200);return}
+  if(!tele&&(R.s||0)>9){toast(`خلّ ${R.n} يوقف عشان تركب`,1600);return}
+  const seat=rideFreeSeat(id,R.k);if(!seat){toast("السيارة مليانة 🙂",1500);return}
+  fadeDo(()=>{if(!remotes[id]||RIDE.on)return;
+    if(WALK.on){WALK.on=false;WALK.inside=false;if(WALK.m)WALK.m.visible=false;document.body.classList.remove("onfoot");$("ctxBtn").hidden=true;WALK.ctxKey="";WALK.jx=WALK.jy=0}
+    Object.assign(RIDE,{on:true,host:id,seat,last:null,lr:null,sw:0,inv:null});car.visible=false;P.vx=P.vz=0;releaseAll();document.body.classList.add("riding");$("walkBtn").textContent="🚪";
+    try{net&&net.ev&&net.ev({k:"ride",a:"in",to:id,st:seat})}catch(e){}
+    toast(`🚗 ركبت مع ${remotes[id].n} — اضغط 🚪 لما تبي تنزل`,2600);rideHud()})}
+function rideUncockpit(){const ck=RIDE.ck,m=RIDE.ckm;RIDE.ck=null;RIDE.ckm=null;if(ck&&ck.parent)ck.parent.remove(ck);if(m){m.traverse(o=>o.layers.set(0));delete m.userData._lay}}
+// end the ride; place=true parks your car behind your friend's car, foot=true puts you on foot at the passenger door
+function rideEnd(place,foot){if(!RIDE.on)return;const R=remotes[RIDE.host],H=R?{x:R.x,z:R.z,r:R.r}:RIDE.last,host=RIDE.host;
+  RIDE.on=false;RIDE.host=null;rideUncockpit();document.body.classList.remove("riding");$("walkBtn").textContent="🚶";phAcc=0;
+  if(place&&H){const r=H.r,fx=Math.sin(r),fz=Math.cos(r),rx=-Math.cos(r),rz=Math.sin(r);
+    let cx=H.x-fx*7,cz=H.z-fz*7;if(collide(cx,cz,2.2).hit){cx=H.x+fx*7;cz=H.z+fz*7}if(collide(cx,cz,2.2).hit){cx=H.x+rx*4.5;cz=H.z+rz*4.5}
+    const c=collide(cx,cz,2.2);P.x=c.px;P.z=c.pz;P.r=r;
+    if(foot){let wx=H.x+rx*1.9,wz=H.z+rz*1.9;if(collide(wx,wz,.4).hit){wx=H.x-rx*1.9;wz=H.z-rz*1.9}
+      if(!WALK.m){WALK.m=makePerson(OUTFITS[0],SKIN[1]);scene.add(WALK.m)}WALK.m.visible=true;Object.assign(WALK,{on:true,x:wx,z:wz,r,cam:r,jx:0,jy:0,inside:false,ctxKey:""});
+      document.body.classList.add("onfoot");$("walkBtn").textContent="🚗"}}
+  P.vx=P.vz=0;P.steer=0;P._px=P.x;P._pz=P.z;P._pr=P.r;car.visible=true;camPos.set(P.x-Math.sin(P.r)*9,5,P.z-Math.cos(P.r)*9);
+  try{net&&net.ev&&net.ev({k:"ride",a:"out",to:host})}catch(e){}rideHud()}
+function rideOut(){if(!RIDE.on)return;const R=remotes[RIDE.host];if(R&&(R.s||0)>9){toast(`خلّ ${R.n} يوقف أول عشان تنزل`,1600);return}
+  fadeDo(()=>{if(!RIDE.on)return;rideEnd(true,true);toast("🚶 نزلت — سيارتك واقفة وراك",2400)})}
+function rideInvite(id){const R=remotes[id];if(!R)return;if(rideBusy())return;if(WALK.on){toast("اركب سيارتك أول عشان تركّبه معك",1700);return}
+  if(R.rd){toast(`${R.n} راكب مع أحد الحين`,1600);return}if((R.vr|0)<NETV){toast(`${R.n} لازم يفتح الرابط الجديد للعبة`,2200);return}
+  try{net&&net.ev&&net.ev({k:"ride",a:"inv",to:id})}catch(e){}toast(`📨 أرسلت الدعوة لـ${R.n}`,1600);closeSheet()}
+function rideSheet(){const me=myNetId(),ids=Object.keys(remotes),T="👥 الركوب مع صاحبك";
+  if(RIDE.on){const R=remotes[RIDE.host];openSheet(T,`<p class="lead">انت راكب مع ${R?escH(R.n):"صاحبك"}.</p><div class="list"><button data-x="out" class="pri"><b>🚪 انزل</b><span>سيارتك بتكون واقفة وراك</span></button></div>`,b=>{b.querySelector("[data-x=out]").onclick=()=>{closeSheet();rideOut()}});return}
+  if(!me||!ids.length){openSheet(T,`<p class="lead">ادخلوا نفس رمز الغرفة، وبعدها تقدر تركّب صاحبك معك في سيارتك.</p>`);return}
+  openSheet(T,`<p class="lead">ادعُ صاحبك يركب معك، وهو يقبل من جواله. أو انزل من سيارتك 🚶 وروح جنب سيارة صاحبك واضغط «اركب مع…».</p><div class="list">${ids.map(id=>{const R=remotes[id],why=R.rd?"راكب مع أحد الحين":(R.vr|0)<NETV?"لازم يفتح الرابط الجديد":"";return`<button data-r="${escH(id)}"${why?' class="off"':""}><b>🚗 ركّب ${escH(R.n)} معك</b>${why?`<span>${why}</span>`:""}</button>`}).join("")}</div>`,
+    b=>{b.querySelectorAll("[data-r]").forEach(x=>x.onclick=()=>rideInvite(x.dataset.r))})}
+function rideHud(){let el=$("rideChip");if(!el){el=document.createElement("div");el.id="rideChip";el.hidden=true;el.style.cssText="position:absolute;top:calc(158px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:8px 12px;display:flex;gap:10px;align-items:center;pointer-events:auto;z-index:12;font-weight:700;font-size:14px;white-space:nowrap;max-width:94vw";$("hud").appendChild(el)}
+  const me=myNetId();let h="";
+  if(RIDE.inv&&(!remotes[RIDE.inv.from]||performance.now()-RIDE.inv.t>20000||RIDE.on))RIDE.inv=null;
+  if(RIDE.inv&&playing)h=`<span>🚗 ${escH(RIDE.inv.who)} يبيك تركب معه</span><button type="button" class="cbtn" data-y="1">اركب</button><button type="button" class="cbtn" data-y="0">لا</button>`;
+  else if(RIDE.on){const R=remotes[RIDE.host];h=`<span>🚗 راكب مع ${R?escH(R.n):"صاحبك"}</span><button type="button" class="cbtn" data-o="1">🚪 انزل</button>`}
+  else if(me&&playing){const ns=ridersWithMe().map(id=>escH(remotes[id].n));if(ns.length)h=`<span>👥 معك: ${ns.join("، ")}</span>`}
+  if(el._h!==h){el._h=h;el.innerHTML=h;el.hidden=!h;
+    el.querySelectorAll("[data-y]").forEach(b=>b.onclick=()=>{const v=RIDE.inv;RIDE.inv=null;rideHud();if(!v)return;if(b.dataset.y==="1")rideIn(v.from,true);else try{net&&net.ev&&net.ev({k:"ride",a:"no",to:v.from})}catch(e){}});
+    const o=el.querySelector("[data-o]");if(o)o.onclick=rideOut}}
+setInterval(()=>{try{rideHud()}catch(e){}},500);
+function rideEvent(from,e,who){const me=myNetId();if(!me||e.to!==me)return;
+  if(e.a==="inv"){if(RIDE.on||MS.mode||RC.on||CH.on||JW.on||(typeof BUS!=="undefined"&&BUS.on)){try{net&&net.ev&&net.ev({k:"ride",a:"busy",to:from})}catch(_){}return}RIDE.inv={from,who,t:performance.now()};rideHud();beep(900,.08)}
+  else if(e.a==="busy")toast(`${who} مشغول الحين`,1700);
+  else if(e.a==="no")toast(`${who} ما يقدر يركب الحين`,1700);
+  else if(e.a==="in"){toast(`🚗 ${who} ركب معك`,2400);beep(1100,.07)}
+  else if(e.a==="out")toast(`👋 ${who} نزل من سيارتك`,2000)}
+// every frame while riding: you sit in your friend's car; the camera follows it (behind the car, or from the passenger seat)
+function rideFrame(dt){if(!RIDE.on)return false;const R=remotes[RIDE.host];
+  if(!R||R.rd){toast(R?`🚗 ${R.n} نزل — نزلت معه`:"صاحبك طلع من اللعبة — نزلت",2400);rideEnd(true,true);return false}
+  if(MS.mode||RC.on||CH.on||(typeof BUS!=="undefined"&&BUS.on)){rideEnd(true,false);return false}
+  RIDE.last={x:R.x,z:R.z,r:R.r};P.x=R.x;P.z=R.z;P.r=R.r;P.vx=R.vx||0;P.vz=R.vz||0;P._px=P.x;P._pz=P.z;P._pr=P.r;P.thr=0;P.brk=0;phAcc=0;if(car.visible)car.visible=false;
+  const sp=(R.s||0)/3.6;hudT("spd",String(Math.round(R.s||0)));engineSound(sp,false);
+  if(R.k!=="moto"&&(!RIDE.ck||RIDE.ckm!==R.m)){rideUncockpit();RIDE.ck=makeCockpit(R.m);RIDE.ckm=R.m}
+  if(R.k==="moto"&&RIDE.ck)rideUncockpit();
+  const type=R.k,bb=type==="bus"?1.3:type==="hilux"||type==="cruiser"||type==="prado"?1.12:type==="moto"?.8:1,inner=camMode===1&&!!RIDE.ck;
+  if(RIDE.ck){RIDE.ck.visible=inner;let d=R.r-(RIDE.lr==null?R.r:RIDE.lr);d=Math.atan2(Math.sin(d),Math.cos(d));RIDE.lr=R.r;RIDE.sw+=(Math.max(-2.4,Math.min(2.4,-d/Math.max(dt,1e-3)*1.3))-RIDE.sw)*Math.min(1,dt*6);RIDE.ck.userData.sw.rotation.z=RIDE.sw}
+  if(inner){const e=RIDE.ck.userData.eye,st=RIDE.seat|0,ex=st===3?Math.abs(e.x):-Math.abs(e.x),ez=st>=2?e.z-.95:e.z;R.m.updateMatrixWorld();camPos.set(ex,e.y,ez).applyMatrix4(R.m.matrixWorld);camLook.set(ex*.5,e.y-1.1,ez+20).applyMatrix4(R.m.matrixWorld)}
+  else{const gy0=groundY(R.x,R.z),dist=(7.2+sp*.06)*bb,hgt=(2.9+sp*.018)*bb,want=camClip(new THREE.Vector3(R.x,gy0+1.8*bb,R.z),new THREE.Vector3(R.x-Math.sin(R.r)*dist,gy0+hgt,R.z-Math.cos(R.r)*dist));
+    camPos.lerp(want,Math.min(1,dt*7));camLook.lerp(new THREE.Vector3(R.x+Math.sin(R.r)*5,gy0+1.3*bb,R.z+Math.cos(R.r)*5),Math.min(1,dt*10))}
+  camera.position.copy(camPos);camera.lookAt(camLook);
+  camera.fov+=(((innerWidth<innerHeight)?75:62)+(inner?6:0)-camera.fov)*Math.min(1,dt*4);camera.near=inner?.08:.5;camera.updateProjectionMatrix();
+  return true}
+
 /* ================= events between players ================= */
 function onEvent(from,e){if(!e||typeof e!=="object")return;const R=remotes[from];const who=R?R.n:"صاحبك";
   if(e.k==="ph"){const p=peds[e.i|0];if(!p||p.hit)return;const h=e.h||{};if(![e.x,e.z,h.vx,h.vz,h.vy].every(isFinite))return;p.x=+e.x;p.z=+e.z;
     applyHit(p,{k:h.k==null?3:+h.k|0,vx:+h.vx,vz:+h.vz,vy:Math.min(16,+h.vy),sx:+h.sx||0,sz:+h.sz||0});thud(Math.max(.05,.6-Math.hypot(p.x-P.x,p.z-P.z)/150))}
   else if(e.k==="sm"){const s=STALLS[e.i|0];if(!s||s.broken||![e.vx,e.vz,e.sp].every(isFinite))return;smash(s,+e.sp,+e.vx,+e.vz)}
   else if(e.k==="chat"){const t=String(e.t||"").replace(/[\u0000-\u001f<>]/g,"").slice(0,60);if(!t)return;toast(`💬 ${who}: ${t}`,4500);if(R)bubble(R.m,t);beep(1200,.05)}
-  else if(e.k==="race"){if(e.a==="go"){const ids=Object.keys(remotes).filter(i=>i!==from);const me=(net&&net.myId&&net.myId())||myName;ids.push(me);ids.sort();startRace(true,1+ids.indexOf(me),e.tr);toast(`🏁 ${who} بدأ سباق جماعي!`,2500)}else if(e.a==="fin"&&isFinite(e.t)){RC.oppFin=+e.t;RC.fins.push(+e.t);if(RC.on&&!RC.done)toast(`🏁 ${who} وصل خط النهاية! (${(+e.t).toFixed(1)} ث)`,3000)}}
-  else if(e.k==="wed"){if(e.a==="inv"&&!MS.mode&&!RC.on&&!CH.on)wedInvite(from,who);else if(e.a==="end"&&JW.on&&JW.host===from)endJoinWed(true)}
-  else if(e.k==="chase"){if(e.a==="go"){startChase(!!e.cop);toast(`🚓 ${who} بدأ مطاردة!`,2000)}else if(e.a==="end")endChase(!!e.caught,true)}}
+  else if(e.k==="race"){if(e.a==="go"){if(RIDE.on){toast(`🏁 ${who} بدأ سباق — انت راكب معه وتتفرج`,2400);return}const ids=Object.keys(remotes).filter(i=>i!==from);const me=(net&&net.myId&&net.myId())||myName;ids.push(me);ids.sort();startRace(true,1+ids.indexOf(me),e.tr);toast(`🏁 ${who} بدأ سباق جماعي!`,2500)}else if(e.a==="fin"&&isFinite(e.t)){RC.oppFin=+e.t;RC.fins.push(+e.t);if(RC.on&&!RC.done)toast(`🏁 ${who} وصل خط النهاية! (${(+e.t).toFixed(1)} ث)`,3000)}}
+  else if(e.k==="wed"){if(e.a==="inv"&&!MS.mode&&!RC.on&&!CH.on&&!RIDE.on)wedInvite(from,who);else if(e.a==="end"&&JW.on&&JW.host===from)endJoinWed(true)}
+  else if(e.k==="ride")rideEvent(from,e,who);
+  else if(e.k==="chase"){if(e.a==="go"){if(RIDE.on){toast(`🚓 ${who} بدأ مطاردة — انت راكب مع صاحبك`,2200);return}startChase(!!e.cop);toast(`🚓 ${who} بدأ مطاردة!`,2000)}else if(e.a==="end")endChase(!!e.caught,true)}}
 function dropSprite(s){if(!s)return;try{if(s.parent)s.parent.remove(s);if(s.material){if(s.material.map)s.material.map.dispose();s.material.dispose()}}catch(e){}}
 function bubble(obj,text){if(obj.userData.bub){dropSprite(obj.userData.bub)}const c=document.createElement("canvas");c.width=512;c.height=128;const g=c.getContext("2d");
   g.font="700 44px Tajawal, sans-serif";g.textAlign="center";g.textBaseline="middle";g.direction="rtl";const w=Math.min(500,g.measureText(text).width+50);
@@ -2342,7 +2421,7 @@ function bubble(obj,text){if(obj.userData.bub){dropSprite(obj.userData.bub)}cons
   g.fillStyle="#13222b";g.fillText(text,256,54);const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;
   const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,depthTest:false}));s.scale.set(8,2,1);s.position.y=5.2;s.renderOrder=6;obj.add(s);obj.userData.bub=s;
   setTimeout(()=>{if(obj.userData.bub===s){dropSprite(s);obj.userData.bub=null}},5000)}
-function teleport(x,z,r){P.x=x;P.z=z;P.r=r;P.vx=P.vz=0;P.steer=0;camPos.set(x-Math.sin(r)*9,5,z-Math.cos(r)*9);TRAIL.length=0}
+function teleport(x,z,r){if(RIDE.on)rideEnd(false,false);P.x=x;P.z=z;P.r=r;P.vx=P.vz=0;P.steer=0;camPos.set(x-Math.sin(r)*9,5,z-Math.cos(r)*9);TRAIL.length=0}
 
 /* ================= sound: radio (original generative music), city ambience, fx ================= */
 const MUS={st:Math.min(SAVE.radio,3),wed:false,next:0,step:0,timer:null,gain:null,cache:new Map(),phr:null,bar:0,rng:1};
@@ -2522,7 +2601,7 @@ function stepPlayer(dt){
       else{if(close>0){P.vx-=nX*close;P.vz-=nZ*close}nx-=nX*pen;nz-=nZ*pen}   // a gentle touch: you just can't drive through it
       continue}
     if(t.len){const hx=Math.sin(t.m.rotation.y)*t.len,hz=Math.cos(t.m.rotation.y)*t.len;push(t.x+hx,t.z+hz,rad+t.rad,.6);push(t.x-hx,t.z-hz,rad+t.rad,.6)}else push(t.x,t.z,rad+t.rad,.6,t)}
-  if(!(typeof frozen!=="undefined"&&frozen>0))for(const id in remotes){const R=remotes[id];if(performance.now()-(R.at||0)<1000)push(R.x,R.z,rad+2.1,.5)}
+  if(!(typeof frozen!=="undefined"&&frozen>0))for(const id in remotes){const R=remotes[id];if(R.rd)continue;if(performance.now()-(R.at||0)<1000)push(R.x,R.z,rad+2.1,.5)}
   for(const C of CONVOYS)for(const m of C.cars)push(m.position.x,m.position.z,rad+2.1,.4);
   if(POL.on)push(POL.x,POL.z,rad+2.1,.5);
   {const s2=Math.hypot(P.vx,P.vz),B=bodyDim(),bfx=Math.sin(P.r),bfz=Math.cos(P.r);for(const p of peds){if(!p.m.visible)continue;const dx=p.x-nx,dz=p.z-nz;if(Math.abs(dx)>8||Math.abs(dz)>8)continue;
@@ -2602,7 +2681,7 @@ function upsertRemote(id,s){if(!s||typeof s!=="object")return;const x=+s.x,z=+s.
   let R=remotes[id];const n=cleanName(s.n),c=cleanColor(s.c),k=VTYPES[s.k]?s.k:"sedan",rm=cleanColor(s.rm||"#c9ccd1");
   if(!R){const m=makeVehicle(k,c,rm);const tag=nameSprite(n,c);m.add(tag);scene.add(m);R=remotes[id]={m,tag,n,c,k,rm,x,z,r,tx:x,tz:z,tr:r,h:+s.h||0,seen:performance.now(),s:0,fx:0};toast(`${n} دخل الشوارع 🚗`);renderPlayers();try{net&&net.onNew&&net.onNew(id)}catch(e){}}
   if(R.k!==k||R.rm!==rm){const m=makeVehicle(k,c,rm);R.m.remove(R.tag);m.add(R.tag);if(R.m.userData.bub)m.add(R.m.userData.bub);scene.remove(R.m);scene.add(m);R.m=m;R.k=k;R.rm=rm}
-  if(R.n!==n||R.c!==c){R.m.remove(R.tag);R.tag=nameSprite(n,c);R.m.add(R.tag);R.m.userData.body.color.set(c);R.m.userData.base.set(c);R.n=n;R.c=c;renderPlayers()}
+  if(R.n!==n||R.c!==c){R.m.remove(R.tag);R.tag=nameSprite(n,c);R.m.add(R.tag);if(R.rtag){if(R.rtag.parent)R.rtag.parent.remove(R.rtag);dropSprite(R.rtag);R.rtag=null}R.m.userData.body.color.set(c);R.m.userData.base.set(c);R.n=n;R.c=c;renderPlayers()}
   if(s.w&&isFinite(+s.wx)&&isFinite(+s.wz)){if(!R.wm){R.wm=makePerson(OUTFITS[0],SKIN[3]);scene.add(R.wm);R.wm.position.set(+s.wx,0,+s.wz)}R.wm.visible=true;R.wtx=+s.wx;R.wtz=+s.wz;R.wtr=+s.wr||0}else if(R.wm)R.wm.visible=false;
   {const md=s.md&&typeof s.md==="object"?{s:STK[s.md.s]?s.md.s:"none",t:s.md.t?1:0,n:/^#[0-9a-f]{6}$/i.test(s.md.n||"")?s.md.n:null}:{};if(JSON.stringify(md)!==R.m.userData.md)applyMods(R.m,md)}
   {const q=+s.q||0;if(q&&R.q&&q<=R.q&&R.q-q<500)return;if(q)R.q=q}
@@ -2612,9 +2691,9 @@ function upsertRemote(id,s){if(!s||typeof s!=="object")return;const x=+s.x,z=+s.
    const tm=+s.tm;let lt=now;if(isFinite(tm)&&tm>0){const off=now-tm;R.off=(R.off===undefined||jump>45)?off:Math.min(off,R.off+.5);lt=tm+R.off;
      const late=Math.max(0,off-R.off);R.jit=Math.max(late,(R.jit||0)*.985);const want=Math.max(110,Math.min(420,95+R.jit*1.25));R.dl=R.dl?R.dl+(want-R.dl)*(want>R.dl?.25:.02):want}
    if(!R.buf||jump>45)R.buf=[];R.buf.push({t:lt,x,z,r,vx:R.vx,vz:R.vz});if(R.buf.length>20)R.buf.shift()}
-  R.tx=x;R.tz=z;R.tr=r;R.s=+s.s||0;R.seen=performance.now();R.cop=!!s.cop;R.sm=!!s.sm;R.m.userData.deco.visible=!!(s.wd||s.jw);R.m.userData.haz.visible=!!(s.wd||s.jw)&&Math.sin(seaT*7)>0;if(s.wd&&!R.conv)R.conv=newConvoy(()=>remotes[id]?{x:R.x,z:R.z,r:R.r}:null,5);if(!s.wd&&R.conv){const cv=R.conv;R.conv=null;cv.parked=true;dropConvoy(cv,8000)}
+  R.tx=x;R.tz=z;R.tr=r;R.s=+s.s||0;R.seen=performance.now();R.vr=+s.vr||0;R.rd=typeof s.rd==="string"&&s.rd.length<90?s.rd:null;R.st=Math.max(0,Math.min(6,s.st|0));R.cop=!!s.cop;R.sm=!!s.sm;R.m.userData.deco.visible=!!(s.wd||s.jw);R.m.userData.haz.visible=!!(s.wd||s.jw)&&Math.sin(seaT*7)>0;if(s.wd&&!R.conv)R.conv=newConvoy(()=>remotes[id]?{x:R.x,z:R.z,r:R.r}:null,5);if(!s.wd&&R.conv){const cv=R.conv;R.conv=null;cv.parked=true;dropConvoy(cv,8000)}
   const h=+s.h||0;if(h>R.h){const d=Math.hypot(R.x-P.x,R.z-P.z),v=Math.max(.15,1-d/250);if(s.wd||s.jw)bouri(v,pick(BOURI_PAT),1.05);else horn(v)}R.h=h}
-function removeRemote(id){const R=remotes[id];if(!R)return;if(R.wm)scene.remove(R.wm);if(R.conv)dropConvoy(R.conv);scene.remove(R.m);dropSprite(R.tag);if(R.m.userData.bub)dropSprite(R.m.userData.bub);delete remotes[id];toast(`${R.n} طلع من اللعبة`);renderPlayers()}
+function removeRemote(id){const R=remotes[id];if(!R)return;if(R.wm)scene.remove(R.wm);if(R.rtag){if(R.rtag.parent)R.rtag.parent.remove(R.rtag);dropSprite(R.rtag);R.rtag=null}if(RIDE.ckm===R.m)rideUncockpit();if(R.conv)dropConvoy(R.conv);scene.remove(R.m);dropSprite(R.tag);if(R.m.userData.bub)dropSprite(R.m.userData.bub);delete remotes[id];toast(`${R.n} طلع من اللعبة`);renderPlayers()}
 function renderPlayers(){const el=$("plist");const ids=Object.keys(remotes);el.hidden=!ids.length;el.textContent="";
   for(const id of ids){const s=document.createElement("span");s.className="dot";s.style.background=remotes[id].c;el.appendChild(s);el.appendChild(document.createTextNode(remotes[id].n+" "))}}
 
@@ -2622,7 +2701,7 @@ function renderPlayers(){const el=$("plist");const ids=Object.keys(remotes);el.h
 let myName="لاعب",myCode="عدن",hornCount=0,net=null;
 try{$("net").style.pointerEvents="auto";$("net").style.cursor="pointer";$("net").addEventListener("click",()=>{try{if(net&&net.diag)net.diag();else toast("الأونلاين لسه ما اشتغل",1500)}catch(e){}})}catch(e){}
 function setNet(state,txt){const dot=$("net").querySelector(".dot");dot.style.background=state==="ok"?"#3dd68c":state==="warn"?"#f2c230":state==="err"?"#e5484d":"#b8c4c9";$("netTxt").textContent=txt}
-let stSeq=0;function myState(){return{q:++stSeq,tm:Math.round(performance.now()),vx:+P.vx.toFixed(1),vz:+P.vz.toFixed(1),g:myCode,n:myName,c:myColor,k:SAVE.car,rm:SAVE.rim,x:+P.x.toFixed(1),z:+P.z.toFixed(1),r:+P.r.toFixed(2),s:Math.round(Math.hypot(P.vx,P.vz)*3.6),h:hornCount,cop:CH.on&&CH.cop?1:0,sm:P.hp<.4?1:0,wd:MS.mode==="wedding"&&MS.state==="drop"?1:0,jw:JW.on?1:0,w:WALK.on&&!WALK.inside?1:0,md:SAVE.mods,wx:+WALK.x.toFixed(1),wz:+WALK.z.toFixed(1),wr:+WALK.r.toFixed(2)}}
+let stSeq=0;function myState(){return{q:++stSeq,tm:Math.round(performance.now()),vx:+P.vx.toFixed(1),vz:+P.vz.toFixed(1),g:myCode,n:myName,c:myColor,k:SAVE.car,rm:SAVE.rim,x:+P.x.toFixed(1),z:+P.z.toFixed(1),r:+P.r.toFixed(2),s:Math.round(Math.hypot(P.vx,P.vz)*3.6),h:hornCount,cop:CH.on&&CH.cop?1:0,sm:P.hp<.4?1:0,wd:MS.mode==="wedding"&&MS.state==="drop"?1:0,jw:JW.on?1:0,w:WALK.on&&!WALK.inside?1:0,md:SAVE.mods,wx:+WALK.x.toFixed(1),wz:+WALK.z.toFixed(1),wr:+WALK.r.toFixed(2),vr:NETV,rd:RIDE.on?RIDE.host:0,st:RIDE.on?RIDE.seat:0}}
 
 async function netClaudeRoom(){
   setNet("","جارٍ الاتصال…");
@@ -2858,7 +2937,7 @@ function steerAxis(dt){if(WH.id==null){const kt=(input.right?1:0)-(input.left?1:
 // fuel dial
 function drawFuel(){const a=(-120+P.fuel*120).toFixed(1);if(drawFuel.a!==a){drawFuel.a=a;$("fuelNeedle").setAttribute("transform",`rotate(${a} 50 54)`)}const lo=P.fuel<.18,hd=!CTL.fuelOn;if(drawFuel.lo!==lo){drawFuel.lo=lo;$("fuelG").classList.toggle("low",lo)}if(drawFuel.hd!==hd){drawFuel.hd=hd;$("fuelG").hidden=hd}}
 // reset to the nearest safe road spot
-function resetToRoad(){let best=null,bd=1e9;
+function resetToRoad(){if(RIDE.on){toast("انت راكب مع صاحبك — اضغط 🚪 عشان تنزل",1700);return}let best=null,bd=1e9;
   for(const r of ROADS){const dx=r[2]-r[0],dz=r[3]-r[1],L2=dx*dx+dz*dz;if(!L2)continue;let t=((P.x-r[0])*dx+(P.z-r[1])*dz)/L2;t=Math.max(0,Math.min(1,t));const x=r[0]+dx*t,z=r[1]+dz*t;const d=Math.hypot(x-P.x,z-P.z);if(d<bd){bd=d;best={r,t,x,z}}}
   if(!best)return;const r=best.r,L=Math.hypot(r[2]-r[0],r[3]-r[1]),ux=(r[2]-r[0])/L,uz=(r[3]-r[1])/L;
   const fx=Math.sin(P.r),fz=Math.cos(P.r);const dir=ux*fx+uz*fz>=0?1:-1;const h=Math.atan2(ux*dir,uz*dir);
@@ -2868,7 +2947,7 @@ function resetToRoad(){let best=null,bd=1e9;
     if(busy)continue;teleport(x,z,h);P.gear="D";updGear();toast("🛟 رجعناك للطريق",1400);return}
   toast("ما لقينا مكان فاضي قريب — جرب بعد شوي",1600)}
 
-function cycleCam(){camMode=(camMode+1)%3;toast(["🎥 خلف السيارة","🎥 داخل السيارة","🎥 فوق الكبوت"][camMode],1200)}
+function cycleCam(){camMode=(camMode+1)%3;if(RIDE.on&&camMode===2)camMode=0;toast(["🎥 خلف السيارة","🎥 داخل السيارة","🎥 فوق الكبوت"][camMode],1200)}
 let CAMF=1;
 function camClip(from,to){const raw=camClipRaw(from,to);const full=from.distanceTo(to)||1,f=Math.min(1,from.distanceTo(raw)/full);
   CAMF=f<CAMF?Math.max(f,CAMF-.25):Math.min(f,CAMF+.012);return new THREE.Vector3().lerpVectors(from,to,CAMF).setY(Math.max(raw.y,to.y))}
@@ -2898,6 +2977,7 @@ function menuSheet(){openSheet("القائمة",`<div class="grid">
   <button data-a="missions"><b>🎯</b>المهمات<small>${MS.mode?MODE_N[MS.mode]:"ركاب · طلبات · زفة"}</small></button>
   <button data-a="race"><b>🏁</b>سباق<small>الخط البحري · صيرة</small></button>
   <button data-a="chase"><b>🚓</b>مطاردة<small>شرطي وحرامي</small></button>
+  <button data-a="ride"><b>👥</b>ركّب صاحبك<small>${RIDE.on?"انت راكب الحين":"يركب معك في سيارتك"}</small></button>
   <button data-a="shop"><b>🚙</b>السيارات<small>اختيار · لون · ترقيات</small></button>
   <button data-a="map"><b>🗺️</b>الخريطة<small>انتقل بسرعة</small></button>
   <button data-a="radio"><b>📻</b>الراديو<small>${MUS.st>=0?RADIO[MUS.st].n:"مطفي"}</small></button>
@@ -2907,7 +2987,7 @@ function menuSheet(){openSheet("القائمة",`<div class="grid">
   <button data-a="set"><b>⚙️</b>الإعدادات<small>المقود · الصوت · الوقت · الجودة</small></button></div>
   <p class="fine">تصميم فتحي فاضل · 💰 ${fmt(SAVE.cash)} ريال · 🚕 ${SAVE.trips} رحلة · 📦 ${SAVE.deliv} طلب · 💍 ${SAVE.wed} زفة${SAVE.best?` · 🏁 ${SAVE.best.toFixed(1)} ث`:""}</p>`,b=>{
   b.querySelectorAll("[data-a]").forEach(x=>x.onclick=()=>{const a=x.dataset.a;
-    if(a==="missions")missionSheet();else if(a==="race")raceSheet();else if(a==="chase")chaseSheet();else if(a==="shop")shopSheet("cars");else if(a==="map"){closeSheet();openMap()}
+    if(RIDE.on&&/^(missions|race|chase|shop|reset)$/.test(a)){toast("انزل من سيارة صاحبك أول 🚪",1700);return}if(a==="ride"){rideSheet();return}if(a==="missions")missionSheet();else if(a==="race")raceSheet();else if(a==="chase")chaseSheet();else if(a==="shop")shopSheet("cars");else if(a==="map"){closeSheet();openMap()}
     else if(a==="radio")radioSheet();else if(a==="cam"){camMode=(camMode+1)%3;menuSheet()}else if(a==="reset"){closeSheet();resetToRoad()}
     else if(a==="set")settingsSheet();else if(a==="lm")landmarksSheet()})})}
 function radioSheet(){const items=[[-1,"⏹ مطفي",""]].concat(RADIO.map((r,i)=>[i,(r.songs?"🎵 ":r.haj?"🔥 ":r.news?"🗞️ ":"📻 ")+r.n,r.songs?SONGS.map(x=>x.n).join(" · "):r.haj?"٨ أغاني هجولة تمشي ورا بعض":r.news?"نشرة أخبار عدن والطقس والمرور":"موسيقى عود وطبول"]));
@@ -2937,7 +3017,7 @@ function chaseSheet(){const f=hasFriend();openSheet("مطاردة",`<p class="le
   <p class="fine">النتيجة: أنت ${CH.me} - ${CH.op} صاحبك</p>
   <div class="row">${CH.on?`<button class="pri warn" id="cq">أوقف المطاردة</button>`:f?`<button class="pri" id="cg">🚓 ابدأ جولة (${CH.next?"أنت الشرطي":"أنت الحرامي"})</button>`:`<button disabled>تحتاج صاحبك متصل</button>`}</div>`,b=>{
   const q=b.querySelector("#cq");if(q)q.onclick=()=>{net&&net.ev({k:"chase",a:"end",caught:0});endChase(false);closeSheet()};
-  const g=b.querySelector("#cg");if(g)g.onclick=()=>{const iCop=CH.next;CH.next=!CH.next;net&&net.ev({k:"chase",a:"go",cop:!iCop});startChase(iCop)}})}
+  const g=b.querySelector("#cg");if(g)g.onclick=()=>{if(rideBusy("chase"))return;const iCop=CH.next;CH.next=!CH.next;net&&net.ev({k:"chase",a:"go",cop:!iCop});startChase(iCop)}})}
 const PRESETS=["تعال الكورنيش 🌊","يلا سباق 🏁","وينك؟","انتظرني","ههههههه 😂","يا ساتر عليك 😅","أنا في كريتر","تعال المعلا","يلا مطاردة 🚓","ما في أحسن من عدن ❤️"];
 function chatSheet(){openSheet("رسالة سريعة",`<div class="chips">${PRESETS.map((p,i)=>`<button data-i="${i}">${p}</button>`).join("")}</div>
   <form id="cf" class="row"><input id="ct" maxlength="60" placeholder="اكتب رسالتك…" autocomplete="off"><button class="pri" type="submit">إرسال</button></form>`,b=>{
@@ -3259,11 +3339,12 @@ function exitCar(){if(!canExit()){toast(RC.on||CH.on?"ما تقدر تنزل و�
   P.vx=P.vz=0;releaseAll();document.body.classList.add("onfoot");$("walkBtn").textContent="🚗";toast("🚶 نزلت — امشِ بالعصا، وارجع للسيارة واضغط «اركب»",2200)}
 function enterCar(){WALK.on=false;WALK.inside=false;if(WALK.m)WALK.m.visible=false;document.body.classList.remove("onfoot");$("walkBtn").textContent="🚶";WALK.jx=WALK.jy=0;$("ctxBtn").hidden=true;WALK.ctxKey=""}
 function ctxTarget(){const W=WALK;if(W.inside){if(Math.hypot(W.x-IN.door.x,W.z-IN.door.z)<2.6)return{k:"out",t:"🚪 اطلع من البيت"};return null}
-  if(Math.hypot(W.x-P.x,W.z-P.z)<3.6)return{k:"car",t:"🚗 اركب السيارة"};
+  {const dc=Math.hypot(W.x-P.x,W.z-P.z),fr=rideNear();if(fr&&(dc>=3.6||fr.d<dc))return{k:"ride",id:fr.id,t:`🚗 اركب مع ${fr.n}`};if(dc<3.6)return{k:"car",t:"🚗 اركب السيارة"}}
   if(HOME.door&&Math.hypot(W.x-HOME.door.x,W.z-HOME.door.z)<2.8)return{k:"door",t:"🚪 ادخل البيت"};
   for(const g of GAR)if(Math.hypot(W.x-g.x,W.z-g.z)<3.4)return{k:"slot",g,t:`🔑 خذ ${VTYPES[g.k].n}`};const K=nearKids();if(K)return{k:"eid",K,t:"🎁 أعطِ الأطفال عيدية"};return null}
-function ctxAction(){if(!playing)return;if(!WALK.on){exitCar();return}const c=WALK.ctx;if(!c){toast("روح جنب السيارة عشان تركب",1300);return}
+function ctxAction(){if(!playing)return;if(RIDE.on){rideOut();return}if(!WALK.on){exitCar();return}const c=WALK.ctx;if(!c){toast("روح جنب السيارة عشان تركب",1300);return}
   if(c.k==="car")enterCar();
+  else if(c.k==="ride")rideIn(c.id,false);
   else if(c.k==="door")fadeDo(()=>{WALK.inside=true;WALK.x=IN.door.x;WALK.z=IN.door.z;WALK.r=0;WALK.cam=0;toast("🏠 أهلاً بك في بيتك",1600)});
   else if(c.k==="out")fadeDo(()=>{WALK.inside=false;WALK.x=HOME.door.x;WALK.z=HOME.door.z-1.5;WALK.r=Math.PI;WALK.cam=Math.PI});
   else if(c.k==="eid"){giveEid(c.K);WALK.ctxKey=""}
@@ -3293,7 +3374,7 @@ refreshGarage();
  joy.addEventListener("pointerdown",e=>{e.preventDefault();id=e.pointerId;try{joy.setPointerCapture(id)}catch(_){}mv(e)});joy.addEventListener("pointermove",e=>{if(e.pointerId===id){e.preventDefault();mv(e)}});
  const up=e=>{if(e&&e.pointerId!==id)return;id=null;WALK.jx=WALK.jy=0;knob.style.transform=""};["pointerup","pointercancel","lostpointercapture"].forEach(t=>joy.addEventListener(t,up));
  const rb=$("runBtn");rb.addEventListener("pointerdown",e=>{e.preventDefault();WALK.run=1;rb.classList.add("held")});["pointerup","pointercancel","pointerleave"].forEach(t=>rb.addEventListener(t,()=>{WALK.run=0;rb.classList.remove("held")}));
- $("ctxBtn").onclick=()=>ctxAction();$("walkBtn").onclick=()=>{if(WALK.on){if(WALK.ctx&&WALK.ctx.k==="car")enterCar();else toast(WALK.inside?"اطلع من البيت أول":"روح جنب سيارتك عشان تركب",1500)}else exitCar()};
+ $("ctxBtn").onclick=()=>ctxAction();$("walkBtn").onclick=()=>{if(RIDE.on){rideOut();return}if(WALK.on){if(WALK.ctx&&WALK.ctx.k==="car")enterCar();else if(WALK.ctx&&WALK.ctx.k==="ride")rideIn(WALK.ctx.id,false);else toast(WALK.inside?"اطلع من البيت أول":"روح جنب سيارتك عشان تركب",1500)}else exitCar()};
  addEventListener("blur",up)}
 
 /* ================= weather: clear / dust (طوز) / rain ================= */
@@ -3548,7 +3629,7 @@ function setJobLoad(){if(JOB.load){car.remove(JOB.load);JOB.load=null}if(!JOB.on
   if(JOB.k==="gas"&&JOB.st!=="load"){const n=JOB.stops.length-JOB.i;for(let k=0;k<n;k++){const c=new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,.62,10),new THREE.MeshLambertMaterial({color:k%2?"#e8402e":"#f2c230"}));c.position.set((k-1)*.42,0,0);G.add(c)}}
   if(JOB.k==="amb"){for(const s of[-1,1]){const l=new THREE.Mesh(new THREE.BoxGeometry(.5,.18,.3),new THREE.MeshBasicMaterial({color:s<0?"#ff2d2d":"#2f7bff"}));l.position.set(s*.3,0,0);G.add(l)}G.userData.amb=1}
   G.position.copy(cp);if(JOB.k==="amb"){G.position.y=(u.type==="bus"?3.4:u.type==="moto"?1.5:1.62);G.position.z=cp.z*.2}car.add(G);JOB.load=G}
-function startJob(k){if(RC.on||CH.on){toast("خلّص السباق أو المطاردة أول");return}if(BOAT.on){toast("انزل من القارب أول");return}if(PK.on)stopPark();stopMission(true);if(DRC.on)stopDrift();closeSheet();
+function startJob(k){if(rideBusy())return;if(RC.on||CH.on){toast("خلّص السباق أو المطاردة أول");return}if(BOAT.on){toast("انزل من القارب أول");return}if(PK.on)stopPark();stopMission(true);if(DRC.on)stopDrift();closeSheet();
   Object.assign(JOB,{on:true,k,i:0,t:0,cr:0,hp:P.hp,stopT:0,pay:0});
   if(k==="water"){const s=stByName("الشيخ عثمان");const d=nearestDest(s.spawn.x,s.spawn.z,300,1500);JOB.stops=[{n:"تعبئة الماء — "+s.n,x:s.spawn.x,z:s.spawn.z,kind:"load"},{n:"بيت في "+d.n,x:d.x,z:d.z,kind:"drop"}];JOB.st="load";JOB.load2=1}
   else if(k==="gas"){const s=stByName("المنصورة");const L=[];let px=s.spawn.x,pz=s.spawn.z;for(let q=0;q<3;q++){const d=nearestDest(px,pz,90,700,L.map(o=>o.d));L.push({d});px=d.x;pz=d.z}
@@ -4226,14 +4307,14 @@ function frame(now){requestAnimationFrame(frame);if(CTL.fps===30&&now-last<28)re
      if(B&&B.length){let i=B.length-1;while(i>0&&B[i-1].t>rt)i--;
        if(i>0&&B[i].t>=rt){const a=B[i-1],c=B[i],u=Math.max(0,Math.min(1,(rt-a.t)/Math.max(1,c.t-a.t)));px=a.x+(c.x-a.x)*u;pz=a.z+(c.z-a.z)*u;let d=c.r-a.r;d=Math.atan2(Math.sin(d),Math.cos(d));pr=a.r+d*u}
        else{const l=B[B.length-1],ex=Math.max(0,Math.min(.3,(rt-l.t)/1000));px=l.x+l.vx*ex;pz=l.z+l.vz*ex;pr=l.r}}
-     const k=Math.min(1,dt*20);R.x+=(px-R.x)*k;R.z+=(pz-R.z)*k;let dr=pr-R.r;dr=Math.atan2(Math.sin(dr),Math.cos(dr));R.r+=dr*k}R.m.position.set(R.x,groundY(R.x,R.z),R.z);R.m.rotation.y=R.r;
+     const k=Math.min(1,dt*20);R.x+=(px-R.x)*k;R.z+=(pz-R.z)*k;let dr=pr-R.r;dr=Math.atan2(Math.sin(dr),Math.cos(dr));R.r+=dr*k}R.m.position.set(R.x,groundY(R.x,R.z),R.z);R.m.rotation.y=R.r;{const hid=!!R.rd;if(R.m.visible===hid)R.m.visible=!hid;if(hid&&R.wm)R.wm.visible=false;const H=hid&&R.rd!==myNetId()?remotes[R.rd]:null;if(H){if(!R.rtag){R.rtag=nameSprite(R.n,R.c);R.rtag.scale.set(4.8,1.2,1)}if(R.rtag.parent!==H.m)H.m.add(R.rtag);R.rtag.position.y=3.6+1.4*Math.max(1,R.st|0)}else if(R.rtag&&R.rtag.parent)R.rtag.parent.remove(R.rtag)}
     for(const w of R.m.userData.wheels)w.rotation.x+=R.s/3.6*dt/.42;
     const bar=R.m.userData.bar;bar.visible=!!R.cop;if(R.cop){const f=(seaT*6|0)%2;bar.userData.r.visible=!!f;bar.userData.bl.visible=!f}
     if(R.wm&&R.wm.visible){const w=R.wm,ox=w.position.x,oz=w.position.z;w.position.x+=(R.wtx-ox)*Math.min(1,dt*8);w.position.z+=(R.wtz-oz)*Math.min(1,dt*8);w.position.y=groundY(w.position.x,w.position.z);w.rotation.y=R.wtr;const mvd=Math.hypot(w.position.x-ox,w.position.z-oz)/Math.max(dt,1e-3);R.wph=(R.wph||0)+mvd*dt*3.4;const sw=mvd>.3?Math.sin(R.wph):0,u=w.userData;u.legs[0].rotation.x=sw*.6;u.legs[1].rotation.x=-sw*.6;u.arms[0].rotation.x=-sw*.5;u.arms[1].rotation.x=sw*.5}
     R.fx+=dt;if(R.sm&&R.fx>.08){R.fx=0;emit(R.x,1.6,R.z,rr(-.4,.4),rr(1.2,2),rr(-.4,.4),"#8a8a8a",1,1.4,2.4,0,false)}}
   let fwd=0;
   if(playing){
-    P.steer=steerAxis(dt);
+    if(!rideFrame(dt)){P.steer=steerAxis(dt);
     phAcc+=dt;let ns=0;while(phAcc>=PH_DT&&ns<10){P._px=P.x;P._pz=P.z;P._pr=P.r;fwd=stepPlayer(PH_DT);phAcc-=PH_DT;ns++}if(ns===10)phAcc=0;if(!ns)fwd=P.vx*Math.sin(P.r)+P.vz*Math.cos(P.r);
     let IX=P.x,IZ=P.z,IR=P.r;if(P._px!==undefined&&Math.hypot(P.x-P._px,P.z-P._pz)<3){const a=Math.min(1,phAcc/PH_DT);IX=P._px+(P.x-P._px)*a;IZ=P._pz+(P.z-P._pz)*a;let dr=P.r-P._pr;dr=Math.atan2(Math.sin(dr),Math.cos(dr));IR=P._pr+dr*a}
     {const gy=groundY(IX,IZ);P.gy=(P.gy===undefined||Math.abs(gy-P.gy)>1.2)?gy:P.gy+(gy-P.gy)*Math.min(1,dt*12);car.position.set(IX,P.gy+P.sy*.18,IZ)}car.rotation.order="YXZ";{const fx=Math.sin(IR)*1.6,fz=Math.cos(IR)*1.6;const sl=(slopeY(IX+fx,IZ+fz)-slopeY(IX-fx,IZ-fz))/3.2;P.slope+=(Math.atan(Math.abs(sl)<.5?sl:0)-P.slope)*Math.min(1,dt*5)}car.rotation.set(P.pitch-P.slope,IR,P.roll);
@@ -4258,7 +4339,7 @@ function frame(now){requestAnimationFrame(frame);if(CTL.fps===30&&now-last<28)re
        const q=new THREE.Vector3(d.x,d.y-(camMode===1?1.1:.18),d.z+20);q.applyMatrix4(car.matrixWorld);camLook.copy(q)}
      camera.position.copy(camPos);if(camShake>0&&CTL.shake){camera.position.x+=(Math.random()-.5)*camShake*.3;camera.position.y+=(Math.random()-.5)*camShake*.3;camShake=Math.max(0,camShake-dt*2.5)}
      camera.lookAt(camLook);
-     camera.fov+=(((innerWidth<innerHeight)?75:62)+(camMode===1?6:0)+(input.nitro&&P.thr>.5&&P.nitro>.02?8:0)-camera.fov)*Math.min(1,dt*4);camera.near=camMode===1?.08:.5;camera.updateProjectionMatrix()}
+     camera.fov+=(((innerWidth<innerHeight)?75:62)+(camMode===1?6:0)+(input.nitro&&P.thr>.5&&P.nitro>.02?8:0)-camera.fov)*Math.min(1,dt*4);camera.near=camMode===1?.08:.5;camera.updateProjectionMatrix()}}
     if(WALK.on){stepWalk(dt);walkCam(dt)}
     sendT+=dt;if(net&&sendT>.066){sendT=0;net.send(myState())}
     miniT+=dt;if(miniT>.05){miniT=0;drawMini();
@@ -4271,7 +4352,7 @@ function frame(now){requestAnimationFrame(frame);if(CTL.fps===30&&now-last<28)re
   stepTOD(dt);stepWeather(dt);stepShips(dt);stepFount();stepWaves();if(playing){stepAban();stepPray(dt);stepEid(dt);stepLandmarks(dt)}stepBeam();if(playing)stepCity(dt);if(playing)stepSfx(fwd);
   if(playing){stepJoinWed();stepFill(dt,fwd);stepRadar(dt,fwd);stepHelp();stepPolice(dt,fwd);stepMission(dt,fwd);stepBus(dt,fwd);stepPark(dt,fwd);stepGPS(dt);stepGood(dt,fwd);stepRace(dt);stepChase(dt);stepAmb(dt);stepPerf(dt);stT+=dt;if(stT>.2){stT=0;stepStations(Math.abs(fwd))}}
   stepX3(dt,fwd);try{stepRealism(dt);stepLife(dt)}catch(e){}
-  {const inC=!!(playing&&cockpit&&cockpit.visible&&camMode===1);if(inC)cockpitLayers(car,cockpit);camera.layers.mask=inC?1:3}
+  {const rC=!!(playing&&RIDE.on&&RIDE.ck&&RIDE.ck.visible),inC=!!(playing&&!RIDE.on&&cockpit&&cockpit.visible&&camMode===1);if(inC)cockpitLayers(car,cockpit);if(rC)cockpitLayers(RIDE.ckm,RIDE.ck);camera.layers.mask=(inC||rC)?1:3}
   SKYDOME.position.set(camera.position.x,0,camera.position.z);renderer.render(scene,camera);if(firstFrame){firstFrame=false;setTimeout(()=>{$("loading").hidden=true},Math.max(250,2800-performance.now()))}}
 try{addPedGroups()}catch(e){}scene.add(shadows);
 /* warning signs before every speed bump (both directions), merged into 3 draw calls */
